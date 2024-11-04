@@ -6,19 +6,21 @@ This is a traditional starter for web with rust.
 This is an early stage of this project, and it currently creates an MVC structure with the following structure:
 
 ```
-- controllers
-- controllers/home_controller.rs
-- resources
-- resources/views
-- resources/views/home.html
-- resources/css
-- resources/css/styles.css
-- resources/js
-- resources/js/scripts.js
-- src/helpers.rs
-- src/routes.rs
-- src/main.rs
-- package.json
+my-project/
+├── controllers/
+│   └── home_controller.rs
+├── resources/
+│   ├── views/
+│   │   └── home.html
+│   ├── css/
+│   │   └── styles.css
+│   └── js/
+│       └── scripts.js
+├── src/
+│   ├── helpers.rs
+│   ├── routes.rs
+│   └── main.rs
+└── package.json
 ```
 
 ## Quick Start
