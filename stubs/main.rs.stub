@@ -1,0 +1,29 @@
+use actix_web::{web, App, HttpServer};
+use dotenv::dotenv;
+use std::env;
+
+mod helpers;
+mod routes;
+mod controllers {
+    pub mod home_controller;
+}
+
+struct AppState {
+    app_name: String,
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
+    HttpServer::new(|| {
+        App::new()
+            .app_data(web::Data::new(AppState {
+                app_name: env::var("APP_NAME").unwrap_or_else(|_| "".to_string()),
+            }))
+            .configure(routes::config)
+    })
+        .bind(("{{ host }}", {{ port }}))?
+        .run()
+        .await
+}

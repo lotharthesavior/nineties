@@ -1,0 +1,45 @@
+use actix_web::{get, web, Error, HttpRequest};
+use actix_files as fs;
+use crate::controllers::home_controller;
+
+#[get("/public/{filename:.*}")]
+pub async fn static_file(req: HttpRequest) -> Result<fs::NamedFile, Error> {
+    let path: std::path::PathBuf = req.match_info().query("filename").parse().unwrap();
+    let file = fs::NamedFile::open(std::path::Path::new("./dist").join(path.clone()))?;
+
+    Ok(file)
+}
+
+pub fn config(cfg: &mut web::ServiceConfig) {
+    cfg
+        .service(home_controller::home)
+        .service(static_file);
+}
+
+#[cfg(test)]
+mod tests {
+    use actix_web::{http, test, App};
+    use super::*;
+
+    #[actix_web::test]
+    async fn test_static_file_ok() {
+        let app = test::init_service(
+            App::new().service(static_file)
+        ).await;
+
+        let req = test::TestRequest::get().uri("/public/styles.css").to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::OK);
+    }
+
+    #[actix_web::test]
+    async fn test_static_file_not_found() {
+        let app = test::init_service(
+            App::new().service(static_file)
+        ).await;
+
+        let req = test::TestRequest::get().uri("/public/not-existing-styles.css").to_request();
+        let resp = test::call_service(&app, req).await;
+        assert_eq!(resp.status(), http::StatusCode::NOT_FOUND);
+    }
+}
