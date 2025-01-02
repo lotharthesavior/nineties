@@ -7,21 +7,6 @@ mod procedures {
     pub mod project_structure;
 }
 
-fn get_stub_dir() -> Dir {
-    #[cfg(all(target_os = "linux", feature = "packaging"))]
-    {
-        include_dir!("/var/www/Agency/nineties/stubs")
-    }
-
-    #[cfg(not(any(
-        all(target_os = "linux", feature = "packaging")
-    )))]
-    {
-        include_dir!("stubs")
-    }
-}
-
-
 fn main() -> Result<(), Error> {
     let current_dir: PathBuf = std::env::current_dir().expect("Failed to get current directory");
     let args: Vec<String> = std::env::args().collect();
@@ -38,9 +23,17 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
+    #[cfg(all(target_os = "linux", feature = "packaging"))]
+    let stub_dir: Dir = include_dir!("stubs");
+
+    #[cfg(not(any(
+        all(target_os = "linux", feature = "packaging")
+    )))]
+    let stub_dir: Dir = include_dir!("stubs");
+
     println!("Creating project {}...", args[1]);
     create_project_assets(
-        get_stub_dir(),
+        stub_dir,
         current_dir,
         PathBuf::from(destination)
     ).expect("Project creation failed");
