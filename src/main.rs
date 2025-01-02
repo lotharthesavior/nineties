@@ -25,14 +25,9 @@ fn main() -> Result<(), Error> {
     let destination = current_dir.join(&args[1]);
 
     println!("Creating project {}...", args[1]);
-    create_project_assets(current_dir, destination).expect("Project creation failed");
+    create_project_assets(current_dir, PathBuf::from(destination)).expect("Project creation failed");
 
     println!("Project created successfully!");
 
     Ok(())
 }
-
-// TODO: move this to a command called "nineties build"
-// TODO: command "nineties dev":
-//       - thread 1: cargo run
-//       - thread 2: npx tailwindcss -i ./src/input.css -o ./src/output.css --watch

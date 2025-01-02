@@ -1,4 +1,5 @@
 use std::{fs, io};
+use std::path::PathBuf;
 use std::process::ExitStatus;
 use fs_extra::dir::{copy, CopyOptions};
 use tokio::process::{ChildStderr, ChildStdout, Command};
@@ -80,6 +81,21 @@ async fn run_cargo_watch() -> io::Result<()> {
 }
 
 async fn run_tailwind_bundle() -> io::Result<()> {
+    if !fs::exists(PathBuf::from("node_modules")).unwrap() {
+        let mut npm_install_process = Command::new("npm")
+            .arg("install")
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .expect("Failed to install nodejs dependencies!");
+
+        let status: ExitStatus = npm_install_process.wait().await.expect("Npm Install wasn't running");
+
+        if !status.success() {
+            return Err(io::Error::new(io::ErrorKind::Other, format!("Npm Install process exited with status: {:?}", status)));
+        }
+    }
+
     let mut tailwind_process = Command::new("npx")
         .arg("tailwindcss")
         .arg("-i")
@@ -115,7 +131,7 @@ async fn run_tailwind_bundle() -> io::Result<()> {
     stderr_task.await.expect("Failed to handle stderr");
 
     if !status.success() {
-        return Err(io::Error::new(io::ErrorKind::Other, format!("Tailwind CSS process existed with status: {:?}", status)));
+        return Err(io::Error::new(io::ErrorKind::Other, format!("Tailwind CSS process exited with status: {:?}", status)));
     }
 
     Ok(())

@@ -1,3 +1,4 @@
+use std::error::Error;
 use actix_session::Session;
 use crate::helpers::{get_from_form_body, get_session_message, is_authenticated, load_template};
 use actix_web::{get, post, web, HttpResponse, Responder};
@@ -64,9 +65,19 @@ pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
     }
 
     let user: &User = user.first().unwrap();
-    let parsed_hash: PasswordHash = PasswordHash::new(&user.password).unwrap();
+    let parsed_hash = PasswordHash::new(&user.password);
+    if parsed_hash.is_err() {
+        println!("Invalid credentials: Couldn't parse password hash");
+        session.insert("message", serde_json::json!({
+            "error": "Invalid credentials",
+            "success": ""
+        })).unwrap();
+
+        return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
+    }
+
     let password_verified: bool = Argon2::default()
-        .verify_password((&*password_param).as_ref(), &parsed_hash)
+        .verify_password((&*password_param).as_ref(), &parsed_hash.unwrap())
         .is_ok();
 
     if password_verified {
