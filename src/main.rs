@@ -1,5 +1,5 @@
 use std::io::{BufRead, Error};
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 use include_dir::{include_dir, Dir};
 use crate::procedures::project_structure::create_project_assets;
 
@@ -23,7 +23,7 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
-    static STUBS_DIR: Dir = include_dir!("src/stubs");
+    static STUBS_DIR: Dir = include_dir!("stubs");
 
     println!("Creating project {}...", args[1]);
     create_project_assets(
