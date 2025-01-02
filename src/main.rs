@@ -7,11 +7,11 @@ mod procedures {
     pub mod project_structure;
 }
 
-#[cfg(target_os = "linux")]
+// #[cfg(target_os = "linux")]
 static STUBS_DIR: Dir = include_dir!("/stubs");
 
-#[cfg(target_os = "debian")]
-static STUBS_DIR: Dir = include_dir!("/var/www/Agency/nineties/debian_stubs");
+// #[cfg(target_os = "debian")]
+// static STUBS_DIR: Dir = include_dir!("/var/www/Agency/nineties/debian_stubs");
 
 fn main() -> Result<(), Error> {
     let current_dir: PathBuf = std::env::current_dir().expect("Failed to get current directory");
