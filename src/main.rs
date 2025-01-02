@@ -23,7 +23,7 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
-    static STUBS_DIR: Dir = include_dir!("stubs");
+    static STUBS_DIR: Dir = include_dir!("../stubs");
 
     println!("Creating project {}...", args[1]);
     create_project_assets(
