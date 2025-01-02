@@ -8,7 +8,7 @@ mod procedures {
 }
 
 // #[cfg(target_os = "linux")]
-static STUBS_DIR: Dir = include_dir!("/stubs");
+// pub static STUBS_DIR: Dir = include_dir!("stubs");
 
 // #[cfg(target_os = "debian")]
 // static STUBS_DIR: Dir = include_dir!("/var/www/Agency/nineties/debian_stubs");
@@ -29,9 +29,11 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
+    let stub_dir: Dir = include_dir!("stubs");
+
     println!("Creating project {}...", args[1]);
     create_project_assets(
-        STUBS_DIR,
+        stub_dir,
         current_dir,
         PathBuf::from(destination)
     ).expect("Project creation failed");

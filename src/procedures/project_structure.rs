@@ -12,7 +12,7 @@ fn recursive_asset_copy(stubs_dir: Dir, target_path: PathBuf, original_base_dir:
     for dir in stubs_dir.dirs() {
         let target_path2 = target_path.clone().join(dir.path());
         fs::create_dir_all(&target_path2).expect("Failed to create directories");
-        recursive_asset_copy(*dir, target_path.clone(), original_base_dir.clone());
+        recursive_asset_copy(dir.clone(), target_path.clone(), original_base_dir.clone());
     }
 }
 
