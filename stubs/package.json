@@ -4,5 +4,8 @@
   },
   "scripts": {
     "build:css": "npx tailwindcss -i ./src/resources/css/styles.css -o ./dist/styles.css --watch"
+  },
+  "dependencies": {
+    "@tailwindcss/forms": "^0.5.9"
   }
 }

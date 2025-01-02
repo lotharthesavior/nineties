@@ -1,6 +1,7 @@
 use std::io::{BufRead, Error};
 use std::path::PathBuf;
 use crate::procedures::{project_structure, tailwind};
+use crate::procedures::project_structure::create_project_assets;
 
 mod procedures {
     pub mod tailwind;
@@ -8,31 +9,23 @@ mod procedures {
 }
 
 fn main() -> Result<(), Error> {
-
-    // The following code will be executed in the current command line path
-
     let current_dir: PathBuf = std::env::current_dir().expect("Failed to get current directory");
+    let args: Vec<String> = std::env::args().collect();
 
-    if !tailwind::verify_dependencies(current_dir.clone()) {
-        eprintln!("npm is not installed. Please install it and try again.");
-        std::process::exit(1);
+    if args.len() < 2 {
+        println!("Please provide a project name");
+        return Ok(());
     }
+    let destination_dir_string = &args[1];
 
-    let current_dir_tw_clone = current_dir.clone();
-    let handle_tw = std::thread::spawn(|| {
-        tailwind::install_tailwind(current_dir_tw_clone);
-    });
+    if destination_dir_string.contains("/") {
+        println!("Please provide a valid project name, this is not valid due to slashes: {}", destination_dir_string);
+        return Ok(());
+    }
+    let destination = current_dir.join(&args[1]);
 
-    let current_dir_project_clone = current_dir.clone();
-    let handle_project = std::thread::spawn(|| {
-        project_structure::create_project_assets(current_dir_project_clone);
-    });
-
-    project_structure::run_cargo_add_dependencies();
-
-
-    handle_tw.join().expect("Thread panicked");
-    handle_project.join().expect("Thread panicked");
+    println!("Creating project {}...", args[1]);
+    create_project_assets(current_dir, destination).expect("Project creation failed");
 
     println!("Project created successfully!");
 

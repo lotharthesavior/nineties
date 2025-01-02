@@ -1,6 +1,8 @@
 use actix_web::{get, web, Error, HttpRequest};
 use actix_files as fs;
-use crate::controllers::home_controller;
+use actix_session::SessionExt;
+use crate::http::controllers::{admin_controller, home_controller, auth_controller};
+use crate::http::middlewares::auth_middleware::AuthMiddleware;
 
 #[get("/public/{filename:.*}")]
 pub async fn static_file(req: HttpRequest) -> Result<fs::NamedFile, Error> {
@@ -12,7 +14,21 @@ pub async fn static_file(req: HttpRequest) -> Result<fs::NamedFile, Error> {
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg
+        // GET /home
         .service(home_controller::home)
+        // GET /signin
+        .service(auth_controller::signin)
+        // POST /signin
+        .service(auth_controller::signin_post)
+        // GET /signout
+        .service(auth_controller::signout)
+        // GET /admin
+        .service(
+            web::scope("/admin")
+                .wrap(AuthMiddleware)
+                .service(admin_controller::dashboard)
+                .service(admin_controller::settings)
+        )
         .service(static_file);
 }
 
