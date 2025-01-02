@@ -1,3 +1,5 @@
+mod build;
+
 use std::env;
 use std::io::{BufRead, Error};
 use std::path::{Path, PathBuf};
