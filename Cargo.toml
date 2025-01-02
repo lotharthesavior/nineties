@@ -10,7 +10,7 @@ include = [
     "stubs/**",
     "src/**",
     "Cargo.toml",
-    "README.md"
+    "Readme.md"
 ]
 
 [[bin]]
