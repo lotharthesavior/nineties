@@ -88,7 +88,9 @@ cargo run develop
 ```
 
 > Note 1: The server will run on `http://localhost:8080`
+>
 > Note 2: This "develop" command will run server with hot-reload and tailwind bundling.
+>
 > Note 3: To just run the server, use `cargo run serve`
 
 ---
