@@ -18,7 +18,7 @@ fn recursive_asset_copy(stubs_dir: Dir, target_path: PathBuf, original_base_dir:
 
 pub fn create_project_assets(base_dir: PathBuf, target_path: PathBuf) -> Result<(), Error> {
     println!("Creating project assets in {}", target_path.as_path().to_str().unwrap_or(""));
-    static STUBS_DIR: Dir = include_dir!("stubs");
+    static STUBS_DIR: Dir = include_dir!("src/stubs");
 
     if !fs::exists(target_path.clone()).unwrap() {
         fs::create_dir_all(target_path.clone());
