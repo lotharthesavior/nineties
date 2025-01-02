@@ -7,9 +7,8 @@ mod procedures {
     pub mod project_structure;
 }
 
-static STUBS_DIR: Dir = include_dir!("stubs");
-
 fn main() -> Result<(), Error> {
+    static STUBS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/stubs");
 
     let current_dir: PathBuf = std::env::current_dir().expect("Failed to get current directory");
     let args: Vec<String> = std::env::args().collect();
