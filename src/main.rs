@@ -1,5 +1,6 @@
+use std::env;
 use std::io::{BufRead, Error};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use include_dir::{include_dir, Dir};
 use crate::procedures::project_structure::create_project_assets;
 
@@ -24,6 +25,9 @@ fn main() -> Result<(), Error> {
     let destination = current_dir.join(&args[1]);
 
     static STUBS_DIR: Dir = include_dir!("src/stubs");
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let assets_dir = Path::new(&manifest_dir).join("stubs");
+    println!("cargo:rerun-if-changed={}", assets_dir.display());
 
     println!("Creating project {}...", args[1]);
     create_project_assets(

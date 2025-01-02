@@ -1,7 +1,7 @@
 use std::fs;
 use std::io::Error;
 use std::path::PathBuf;
-use include_dir::{include_dir, Dir};
+use include_dir::{Dir};
 
 fn recursive_asset_copy(stubs_dir: Dir, target_path: PathBuf, original_base_dir: PathBuf) {
     for file in stubs_dir.files() {
