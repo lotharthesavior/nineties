@@ -1,7 +1,8 @@
 use actix_web::{web, App, HttpServer};
 use actix_session::{SessionMiddleware, storage::CookieSessionStore};
 use dotenv::dotenv;
-use std::env;
+use std::{env, fs};
+use std::path::PathBuf;
 use std::sync::Mutex;
 use actix_web::cookie::Key;
 use actix_web::middleware::NormalizePath;
@@ -46,8 +47,23 @@ struct AppState {
     user_id: Mutex<Option<i32>>,
 }
 
+fn check_app_health() {
+    println!("checking stuff");
+    if !fs::exists(PathBuf::from(".env")).unwrap() {
+        fs::copy(PathBuf::from(".env.example"), PathBuf::from(".env"))
+            .expect("Failed to copy .env.example to .env");
+    }
+
+    if !fs::exists(PathBuf::from("database/database.sqlite")).unwrap() {
+        let mut conn: SqliteConnection = helpers::get_connection();
+        conn.run_pending_migrations(models::user::MIGRATIONS).expect("Failed to run migrations");
+    }
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    check_app_health();
+
     dotenv().ok();
 
     let args: Vec<String> = env::args().collect();
