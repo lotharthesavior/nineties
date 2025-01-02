@@ -1,6 +1,6 @@
 [package]
 name = "nineties"
-version = "0.0.7"
+version = "0.0.8"
 edition = "2021"
 authors = ["Savio Resende <savio@savioresende.com>"]
 description = "An app starter for traditional web apps."
@@ -10,7 +10,7 @@ include = [
     "stubs/**",
     "src/**",
     "Cargo.toml",
-    "Readme.md"
+    "README.md"
 ]
 
 [[bin]]
