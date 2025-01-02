@@ -6,7 +6,7 @@ authors = ["Savio Resende <savio@savioresende.com>"]
 description = "An app starter for traditional web apps."
 license = "MIT"
 repository = "https://github.com/lotharthesavior/nineties"
-include = ["stubs/**", "src/**", "Cargo.toml", "README.md"]
+include = ["src/**", "Cargo.toml", "README.md"]
 
 [[bin]]
 name = "nineties"
