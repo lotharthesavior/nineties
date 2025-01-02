@@ -7,7 +7,10 @@ mod procedures {
     pub mod project_structure;
 }
 
+static STUBS_DIR: Dir = include_dir!("stubs");
+
 fn main() -> Result<(), Error> {
+
     let current_dir: PathBuf = std::env::current_dir().expect("Failed to get current directory");
     let args: Vec<String> = std::env::args().collect();
 
@@ -22,8 +25,6 @@ fn main() -> Result<(), Error> {
         return Ok(());
     }
     let destination = current_dir.join(&args[1]);
-
-    static STUBS_DIR: Dir = include_dir!("../stubs");
 
     println!("Creating project {}...", args[1]);
     create_project_assets(
