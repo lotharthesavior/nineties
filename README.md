@@ -76,7 +76,7 @@ cargo install nineties
 **Step 2**: Create a project with nineties:
 
 ```bash
-./nineties my_project
+nineties my_project
 ```
 
 **Step 3**: Go inside your project, seed and and start develop
