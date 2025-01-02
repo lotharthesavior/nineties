@@ -67,7 +67,11 @@ my-project/
 
 ## Quick Start
 
-**Step 1**: Download the release binary.
+**Step 1**: Install the create:
+
+```bash
+cargo install nineties
+```
 
 **Step 2**: Create a project with nineties:
 
