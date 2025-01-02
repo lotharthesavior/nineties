@@ -7,5 +7,9 @@ description = "An app starter for traditional web apps."
 license = "MIT"
 repository = "https://github.com/lotharthesavior/nineties"
 
+[[bin]]
+name = "nineties"
+path = "src/main.rs"
+
 [dependencies]
 include_dir = "0.6"
