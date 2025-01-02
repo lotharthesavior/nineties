@@ -7,7 +7,7 @@ description = "An app starter for traditional web apps."
 license = "MIT"
 repository = "https://github.com/lotharthesavior/nineties"
 include = [
-    "stubs/**",
+    "$CARGO_MANIFEST_DIR/stubs/**",
     "src/**",
     "Cargo.toml",
     "README.md"
