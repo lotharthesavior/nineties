@@ -1,5 +1,6 @@
 use std::io::{BufRead, Error};
 use std::path::PathBuf;
+use include_dir::{include_dir, Dir};
 use crate::procedures::project_structure::create_project_assets;
 
 mod procedures {
@@ -22,8 +23,14 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
+    static STUBS_DIR: Dir = include_dir!("src/stubs");
+
     println!("Creating project {}...", args[1]);
-    create_project_assets(current_dir, PathBuf::from(destination)).expect("Project creation failed");
+    create_project_assets(
+        STUBS_DIR,
+        current_dir,
+        PathBuf::from(destination)
+    ).expect("Project creation failed");
 
     println!("Project created successfully!");
 
