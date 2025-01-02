@@ -1,6 +1,3 @@
-mod build;
-
-use std::env;
 use std::io::{BufRead, Error};
 use std::path::{Path, PathBuf};
 use include_dir::{include_dir, Dir};
