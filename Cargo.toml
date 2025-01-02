@@ -1,6 +1,6 @@
 [package]
 name = "nineties"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 authors = ["Savio Resende <savio@savioresende.com>"]
 description = "An app starter for traditional web apps."
