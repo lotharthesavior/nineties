@@ -1,10 +1,8 @@
 use std::io::{BufRead, Error};
 use std::path::PathBuf;
-use crate::procedures::{project_structure, tailwind};
 use crate::procedures::project_structure::create_project_assets;
 
 mod procedures {
-    pub mod tailwind;
     pub mod project_structure;
 }
 
