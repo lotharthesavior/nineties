@@ -1,15 +1,12 @@
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHash, PasswordHasher};
+use argon2::{Argon2, PasswordHasher};
 use diesel::{Insertable, QueryDsl, RunQueryDsl, SqliteConnection};
+use crate::database::seeders::traits::seeder::Seeder;
 use crate::models::user::{NewUser};
 use crate::schema::users::dsl::*;
 
 pub struct UserSeeder;
-
-pub trait Seeder {
-    fn execute(conn: &mut SqliteConnection) -> Result<(), Box<dyn std::error::Error>>;
-}
 
 impl Seeder for UserSeeder {
     fn execute(conn: &mut SqliteConnection) -> Result<(), Box<dyn std::error::Error>> {

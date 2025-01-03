@@ -9,7 +9,8 @@ use actix_web::middleware::NormalizePath;
 use diesel::SqliteConnection;
 use diesel_migrations::MigrationHarness;
 use tokio::io::{AsyncBufReadExt};
-use crate::database::seeders::create_users::{Seeder, UserSeeder};
+use crate::database::seeders::create_users::{UserSeeder};
+use crate::database::seeders::traits::seeder::Seeder;
 
 mod helpers;
 mod routes;
@@ -28,6 +29,10 @@ mod http {
 mod database {
     pub mod seeders {
         pub mod create_users;
+
+        pub mod traits {
+            pub mod seeder;
+        }
     }
 }
 
@@ -74,51 +79,51 @@ async fn main() -> std::io::Result<()> {
         .parse::<u16>()
         .expect("APP_PORT must be a valid u16");
 
+    let mut command: &str = "serve";
     if args.len() > 1 {
-        match args[1].as_str() {
-            "serve" => {
-                let secret_key = Key::from(env::var("SECRET_KEY")
-                    .expect("SECRET_KEY must be set")
-                    .as_bytes());
+        command = args[1].as_str();
+    }
 
-                HttpServer::new(move || {
-                    App::new()
-                        .wrap(SessionMiddleware::new(
-                            CookieSessionStore::default(),
-                            secret_key.clone(),
-                        ))
-                        .wrap(NormalizePath::trim())
-                        .app_data(web::Data::new(AppState {
-                            app_name: Mutex::from(env::var("APP_NAME").unwrap_or_else(|_| "".to_string())),
-                            user_id: Mutex::from(None),
-                        }))
-                        .configure(routes::config)
-                })
+    match command {
+        "serve" => {
+            let secret_key = Key::from(env::var("SECRET_KEY")
+                .expect("SECRET_KEY must be set")
+                .as_bytes());
+
+            HttpServer::new(move || {
+                App::new()
+                    .wrap(SessionMiddleware::new(
+                        CookieSessionStore::default(),
+                        secret_key.clone(),
+                    ))
+                    .wrap(NormalizePath::trim())
+                    .app_data(web::Data::new(AppState {
+                        app_name: Mutex::from(env::var("APP_NAME").unwrap_or_else(|_| "".to_string())),
+                        user_id: Mutex::from(None),
+                    }))
+                    .configure(routes::config)
+            })
                 .bind((app_url, app_port))?
                 .run()
                 .await
-            }
-            "develop" => {
-                console::development::run_development().await
-            }
-            "migrate" => {
-                println!("Running migrations...");
-                let mut conn: SqliteConnection = helpers::get_connection();
-                conn.run_pending_migrations(models::user::MIGRATIONS).expect("Failed to run migrations");
-                Ok(())
-            }
-            "seed" => {
-                println!("Running seeders...");
-                let _ = UserSeeder::execute(&mut helpers::get_connection()).expect("Failed to seed users table");
-                Ok(())
-            }
-            _ => {
-                eprintln!("Unknown command");
-                Ok(())
-            }
         }
-    } else {
-        eprintln!("No command provided");
-        Ok(())
+        "develop" => {
+            console::development::run_development().await
+        }
+        "migrate" => {
+            println!("Running migrations...");
+            let mut conn: SqliteConnection = helpers::get_connection();
+            conn.run_pending_migrations(models::user::MIGRATIONS).expect("Failed to run migrations");
+            Ok(())
+        }
+        "seed" => {
+            println!("Running seeders...");
+            let _ = UserSeeder::execute(&mut helpers::get_connection()).expect("Failed to seed users table");
+            Ok(())
+        }
+        _ => {
+            eprintln!("Unknown command");
+            Ok(())
+        }
     }
 }
