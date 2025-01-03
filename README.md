@@ -236,3 +236,12 @@ Your new seeders must implement the `Seeder` trait.
 - [ ] WebSockets for realtime interactions
 - [ ] JS Bundling?
 - [ ] Wrap diesel rollback command, and add that to our `main.rs` entrypoint available commands
+
+## Contributing
+
+Feel free to contribute to this project. You can open issues, create pull requests, or just fork it and make your own version.
+
+## License
+
+This project is licensed under the MIT License.
+
