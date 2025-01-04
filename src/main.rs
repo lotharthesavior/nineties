@@ -26,8 +26,10 @@ fn main() -> Result<(), Error> {
     #[cfg(all(target_os = "linux", feature = "packaging"))]
     let stub_dir: Dir = include_dir!("stubs");
 
+    // all(target_os = "linux", feature = "packaging", env = "packaging")
+
     #[cfg(not(any(
-        all(target_os = "linux", feature = "packaging", env = "packaging")
+        all(target_os = "linux", env = "packaging")
     )))]
     let stub_dir: Dir = include_dir!("/var/www/Agency/nineties/stubs"); // this has to be hardcoded in linux :/
 
