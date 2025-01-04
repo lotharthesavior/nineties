@@ -33,6 +33,8 @@ fn main() -> Result<(), Error> {
     )))]
     let stub_dir: Dir = include_dir!("/var/www/Agency/nineties/stubs"); // this has to be hardcoded in linux :/
 
+    println!("Stub directory: {:?}", stub_dir);
+
     println!("Creating project {}...", args[1]);
     create_project_assets(
         stub_dir,
