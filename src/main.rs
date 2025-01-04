@@ -23,17 +23,11 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
-    #[cfg(all(target_os = "linux", feature = "packaging"))]
+    #[cfg(all(target_os = "linux", not(env = "packaging")))]
     let stub_dir: Dir = include_dir!("stubs");
 
-    // all(target_os = "linux", feature = "packaging", env = "packaging")
-
-    #[cfg(not(any(
-        all(target_os = "linux", env = "packaging")
-    )))]
+    #[cfg(all(target_os = "linux", env = "packaging"))]
     let stub_dir: Dir = include_dir!("/var/www/Agency/nineties/stubs"); // this has to be hardcoded in linux :/
-
-    println!("Stub directory: {:?}", stub_dir);
 
     println!("Creating project {}...", args[1]);
     create_project_assets(
