@@ -1,4 +1,3 @@
-use std::env;
 use std::io::{BufRead, Error};
 use std::path::{PathBuf};
 use include_dir::{include_dir, Dir};
@@ -25,13 +24,10 @@ fn main() -> Result<(), Error> {
     let destination = current_dir.join(&args[1]);
 
     // This is needed for linux (seems only debian) to get the stubs
-    let stub_dir: Dir;
-    let is_packaging = env::var("PACKAGING").unwrap_or_else(|_| "false".to_string());
-    if is_packaging == "true" {
-        stub_dir = include_dir!("/var/www/Agency/nineties/stubs");
-    } else {
-        stub_dir = include_dir!("stubs");
-    }
+    #[cfg(not(target_os = "linux"))]
+    let stub_dir: Dir = include_dir!("stubs");
+    #[cfg(all(target_os = "linux"))]
+    let stub_dir: Dir = include_dir!("/var/www/Agency/nineties/stubs");
 
     println!("Creating project {}...", args[1]);
     create_project_assets(
