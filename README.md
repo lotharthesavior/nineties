@@ -5,7 +5,7 @@ This is a traditional starter for web with rust on top of [Actix](https://actix.
 
 The started app has a login wall and everything you need to start: a basic MVC structure.
 
-This is an early stage of this project, and it currently creates an MVC structure with the following structure:
+It creates an MVC structure with the following structure:
 
 ```
 my-project/
