@@ -1,3 +1,4 @@
+use std::env;
 use std::io::{BufRead, Error};
 use std::path::{PathBuf};
 use include_dir::{include_dir, Dir};
@@ -23,11 +24,12 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
-    #[cfg(all(target_os = "linux", not(env = "packaging")))]
-    let stub_dir: Dir = include_dir!("stubs");
-
-    #[cfg(all(target_os = "linux", env = "packaging"))]
-    let stub_dir: Dir = include_dir!("/var/www/Agency/nineties/stubs"); // this has to be hardcoded in linux :/
+    // This is needed for linux (seems only debian) to get the stubs
+    let mut stub_dir: Dir = include_dir!("stubs");
+    let is_packaging = env::var("PACKAGING").unwrap_or_else(|_| "false".to_string());
+    if is_packaging == "true" {
+        stub_dir = include_dir!("/var/www/Agency/nineties/stubs");
+    }
 
     println!("Creating project {}...", args[1]);
     create_project_assets(
