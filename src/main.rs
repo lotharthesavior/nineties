@@ -27,9 +27,9 @@ fn main() -> Result<(), Error> {
     let stub_dir: Dir = include_dir!("stubs");
 
     #[cfg(not(any(
-        all(target_os = "linux", feature = "packaging")
+        all(target_os = "linux", feature = "packaging", env = "packaging")
     )))]
-    let stub_dir: Dir = include_dir!("/var/www/Agency/nineties/stubs");
+    let stub_dir: Dir = include_dir!("/var/www/Agency/nineties/stubs"); // this has to be hardcoded in linux :/
 
     println!("Creating project {}...", args[1]);
     create_project_assets(
