@@ -16,7 +16,7 @@ pub async fn dashboard(data: web::Data<AppState>, session: Session) -> HttpRespo
         return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
     }
 
-    HttpResponse::Ok().body(load_template("admin/dashboard.html", vec![("name", app_name), ("user_name", &user.unwrap().name)]))
+    HttpResponse::Ok().body(load_template("admin/dashboard.html", vec![("name", app_name), ("user_name", &user.unwrap().name)], None))
 }
 
 #[get("/settings")]
@@ -29,7 +29,7 @@ pub async fn settings(_req: HttpRequest, data: web::Data<AppState>, session: Ses
         return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
     }
 
-    HttpResponse::Ok().body(load_template("admin/settings.html", vec![("name", app_name), ("user_name", &user.unwrap().name)]))
+    HttpResponse::Ok().body(load_template("admin/settings.html", vec![("name", app_name), ("user_name", &user.unwrap().name)], None))
 }
 
 #[cfg(test)]
@@ -43,7 +43,8 @@ mod tests {
     use diesel::{SqliteConnection};
     use diesel_migrations::MigrationHarness;
     use crate::{helpers, AppState};
-    use crate::database::seeders::create_users::{Seeder, UserSeeder};
+    use crate::database::seeders::create_users::UserSeeder;
+    use crate::database::seeders::traits::seeder::Seeder;
     use crate::http::controllers::{admin_controller, auth_controller};
     use crate::http::middlewares::auth_middleware::AuthMiddleware;
     use crate::models::user::{MIGRATIONS};

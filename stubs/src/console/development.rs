@@ -10,15 +10,17 @@ use tokio::io::{AsyncBufReadExt, BufReader, Lines};
 pub async fn run_development() -> io::Result<()> {
     println!("Running develop...");
 
-    clean_dist_folder();
-    copy_imgs_to_dist();
+    // clean_dist_folder();
+    // copy_imgs_to_dist();
 
     let cargo_watch_task: JoinHandle<io::Result<()>> = tokio::spawn(run_cargo_watch());
-    let tailwind_task: JoinHandle<io::Result<()>> = tokio::spawn(run_tailwind_bundle());
+    // let tailwind_task: JoinHandle<io::Result<()>> = tokio::spawn(run_tailwind_bundle());
+    let vite_task: JoinHandle<io::Result<()>> = tokio::spawn(run_vite_bundle());
 
     match try_join!(
         cargo_watch_task,
-        tailwind_task
+        // tailwind_task
+        vite_task
     ) {
         Ok(_) => println!("Development environment running successfully."),
         Err(e) => {
@@ -132,6 +134,60 @@ async fn run_tailwind_bundle() -> io::Result<()> {
 
     if !status.success() {
         return Err(io::Error::new(io::ErrorKind::Other, format!("Tailwind CSS process exited with status: {:?}", status)));
+    }
+
+    Ok(())
+}
+
+async fn run_vite_bundle() -> io::Result<()> {
+    if !fs::exists(PathBuf::from("node_modules")).unwrap() {
+        let mut npm_install_process = Command::new("npm")
+            .arg("install")
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::piped())
+            .spawn()
+            .expect("Failed to install nodejs dependencies!");
+
+        let status: ExitStatus = npm_install_process.wait().await.expect("Npm Install wasn't running");
+
+        if !status.success() {
+            return Err(io::Error::new(io::ErrorKind::Other, format!("Npm Install process exited with status: {:?}", status)));
+        }
+    }
+
+    let mut vite_process = Command::new("npx")
+        .arg("vite")
+        .arg("build")
+        .arg("--watch")
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("Failed to start Vite dev server");
+
+    let stdout = vite_process.stdout.take().expect("Failed to capture stdout");
+    let stderr = vite_process.stderr.take().expect("Failed to capture stderr");
+
+    let stdout_task = tokio::spawn(async move {
+        let mut reader: Lines<BufReader<ChildStdout>> = BufReader::new(stdout).lines();
+        while let Ok(Some(line)) = reader.next_line().await {
+            eprintln!("stdout: {}", line);
+        }
+    });
+
+    let stderr_task: JoinHandle<()> = tokio::spawn(async move {
+        let mut reader: Lines<BufReader<ChildStderr>> = BufReader::new(stderr).lines();
+        while let Ok(Some(line)) = reader.next_line().await {
+            eprintln!("stderr: {}", line);
+        }
+    });
+
+    let status: ExitStatus = vite_process.wait().await.expect("Vite process wasn't running");
+
+    stdout_task.await.expect("Failed to handle stdout");
+    stderr_task.await.expect("Failed to handle stderr");
+
+    if !status.success() {
+        return Err(io::Error::new(io::ErrorKind::Other, format!("Vite process exited with status: {:?}", status)));
     }
 
     Ok(())

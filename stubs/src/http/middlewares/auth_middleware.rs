@@ -4,8 +4,8 @@ use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, T
 use actix_web::body::EitherBody;
 use diesel::{QueryDsl, RunQueryDsl};
 use futures_util::future::LocalBoxFuture;
-use crate::{helpers};
-use crate::models::user::{User};
+use crate::helpers;
+use crate::models::user::User;
 use crate::schema::users::dsl::users;
 
 pub struct AuthMiddleware;
@@ -80,7 +80,8 @@ mod tests {
     use diesel::{QueryDsl, RunQueryDsl, SqliteConnection};
     use diesel_migrations::MigrationHarness;
     use crate::{helpers, AppState};
-    use crate::database::seeders::create_users::{Seeder, UserSeeder};
+    use crate::database::seeders::create_users::UserSeeder;
+    use crate::database::seeders::traits::seeder::Seeder;
     use crate::http::middlewares::auth_middleware::AuthMiddleware;
     use crate::models::user::{MIGRATIONS};
     use crate::schema::users::dsl::users;

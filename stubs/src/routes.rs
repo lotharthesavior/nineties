@@ -34,6 +34,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 
 #[cfg(test)]
 mod tests {
+    use std::fs;
+
     use actix_web::{http, test, App};
     use super::*;
 
@@ -43,8 +45,14 @@ mod tests {
             App::new().service(static_file)
         ).await;
 
+        fs::create_dir_all("./dist").unwrap();
+        fs::write("./dist/styles.css", "").unwrap();
+
         let req = test::TestRequest::get().uri("/public/styles.css").to_request();
         let resp = test::call_service(&app, req).await;
+
+        fs::remove_file("./dist/styles.css").unwrap();
+
         assert_eq!(resp.status(), http::StatusCode::OK);
     }
 

@@ -22,7 +22,7 @@ pub async fn signin(data: web::Data<AppState>, session: Session) -> impl Respond
         load_template("signin.html", vec![
             ("name", app_name),
             ("session_message", &*session_message.1)
-        ])
+        ], None)
     )
 }
 
@@ -105,7 +105,8 @@ mod tests {
     use diesel::{QueryDsl, RunQueryDsl, SqliteConnection};
     use diesel_migrations::MigrationHarness;
     use crate::{helpers, AppState};
-    use crate::database::seeders::create_users::{Seeder, UserSeeder};
+    use crate::database::seeders::create_users::UserSeeder;
+    use crate::database::seeders::traits::seeder::Seeder;
     use crate::http::controllers::auth_controller;
     use crate::http::middlewares::auth_middleware::AuthMiddleware;
     use crate::models::user::{MIGRATIONS};

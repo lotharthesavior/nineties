@@ -3,7 +3,7 @@ use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 use diesel::{Insertable, QueryDsl, RunQueryDsl, SqliteConnection};
 use crate::database::seeders::traits::seeder::Seeder;
-use crate::models::user::{NewUser};
+use crate::models::user::NewUser;
 use crate::schema::users::dsl::*;
 
 pub struct UserSeeder;

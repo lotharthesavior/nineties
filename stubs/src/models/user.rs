@@ -27,11 +27,12 @@ pub struct NewUser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use actix_web::{test};
+    use actix_web::test;
     use diesel::{QueryDsl, RunQueryDsl, SqliteConnection, ExpressionMethods, Connection};
     use diesel::result::Error;
     use diesel_migrations::MigrationHarness;
-    use crate::database::seeders::create_users::{Seeder, UserSeeder};
+    use crate::database::seeders::traits::seeder::Seeder;
+    use crate::database::seeders::create_users::UserSeeder;
     use crate::helpers;
     use crate::models::user::{NewUser, User, MIGRATIONS};
     use crate::schema::users::dsl::*;
@@ -59,7 +60,7 @@ mod tests {
                 name: "John Doe",
                 email: &expected_email,
                 password: "password",
-            });
+            }).execute(conn).unwrap();
 
             let results: Vec<User> = users.filter(email.eq(&expected_email))
                 .load::<User>(conn)

@@ -9,9 +9,6 @@
     <link rel="icon" href="/public/imgs/nineties-logo.png" type="image/png">
     <link rel="apple-touch-icon" href="/public/imgs/nineties-logo.png">
 
-    <!-- Preload CSS for better performance -->
-    <link rel="preload" href="/public/styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-
     <!-- PWA Manifest -->
     <!--<link rel="manifest" href="/manifest.json">-->
 
@@ -26,7 +23,7 @@
 
     {% include "parts/open-graph.html" %}
 
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
+    {{ assets | safe }}
 
     <title>Nineties</title>
 </head>

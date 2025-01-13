@@ -13,7 +13,7 @@ pub async fn home(data: web::Data<AppState>, session: Session) -> impl Responder
             ("name", app_name),
             ("user_authenticated", &user_authenticated),
             ("session_message", &get_session_message(&session, false).1)
-        ])
+        ], Option::from(vec!["src/resources/css/styles.css", "src/resources/js/script.js"]))
     )
 }
 

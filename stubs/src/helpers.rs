@@ -1,4 +1,6 @@
-use std::env;
+use std::{env, fs};
+use std::collections::HashMap;
+use std::io::Error;
 use actix_session::Session;
 use tera::Tera;
 use tera::Context;
@@ -9,9 +11,11 @@ use argon2::{
     },
     Argon2
 };
-use diesel::{Connection, SqliteConnection};
+use diesel::{Connection, SqliteConnection, QueryDsl, RunQueryDsl};
+use crate::models::user::User;
+use crate::schema::users::dsl::users;
 
-pub fn load_template(template: &str, params: Vec<(&str, &str)>) -> String {
+pub fn load_template(template: &str, params: Vec<(&str, &str)>, assets: Option<Vec<&str>>) -> String {
     let tera = match Tera::new("src/resources/views/**/*") {
         Ok(t) => t,
         Err(e) => {
@@ -25,7 +29,58 @@ pub fn load_template(template: &str, params: Vec<(&str, &str)>) -> String {
         context.insert(key, value);
     }
 
+    context.insert("assets", &get_assets_string(assets));
+
     tera.render(template, &context).expect("Failed to render template")
+}
+
+// Here we return the html string to add the assets to the template.
+// If the assets are passed, we only add the assets passed, otherwise we add all the assets from
+// the manifest.json file.
+fn get_assets_string(assets: Option<Vec<&str>>) -> String {
+    let mut assets_string: String = String::new();
+    if assets.is_none() {
+        for (key, value) in get_manifest_assets().into_iter().enumerate() {
+            let asset_type = value.1.split('.').last().unwrap();
+            if asset_type == "css" {
+                assets_string.push_str(&format!("<link rel=\"stylesheet\" href=\"/public/{}\">", value.1));
+            } else if asset_type == "js" {
+                assets_string.push_str(&format!("<script src=\"/public/{}\" defer></script>", value.1));
+            }
+        }
+    } else {
+        let manifest_assets = get_manifest_assets();
+        for (key, value) in assets.unwrap().into_iter().enumerate() {
+            let asset_type = value.split('.').last().unwrap();
+            let asset = manifest_assets.get(value);
+            if asset_type == "css" && asset.is_some() {
+                assets_string.push_str(&format!("<link rel=\"stylesheet\" href=\"/public/{}\">", asset.unwrap()));
+            } else if asset_type == "js" && asset.is_some() {
+                assets_string.push_str(&format!("<script src=\"/public/{}\" defer></script>", asset.unwrap()));
+            }
+        }
+    }
+
+    assets_string
+}
+
+// Here we get the assets from the manifest.json file.
+fn get_manifest_assets() -> HashMap<String, String> {
+    let mut assets: HashMap<String, String> = HashMap::new();
+    let manifest: Result<String, Error> = fs::read_to_string("dist/.vite/manifest.json");
+    if manifest.is_ok() {
+        let manifest: String = manifest.unwrap();
+        let manifest_json: serde_json::Value = serde_json::from_str(&manifest).expect("Failed to parse manifest.json");
+
+        for (key, value) in manifest_json.as_object().unwrap().iter() {
+            let asset = value.get("file");
+            if asset.is_some() {
+                assets.insert(key.to_string(), asset.unwrap().as_str().unwrap().parse().unwrap());
+            }
+        }
+    }
+
+    assets
 }
 
 pub fn get_connection() -> SqliteConnection {
@@ -59,9 +114,10 @@ pub fn get_from_form_body(field: String, req_body: String) -> String {
 }
 
 pub fn is_authenticated(session: &Session) -> bool {
-    let user_id = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
+    let user_id: i32 = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
+    let user: Result<User, diesel::result::Error> = users.find(user_id).first::<User>(&mut get_connection());
 
-    user_id != 0
+    user.is_ok()
 }
 
 pub fn get_session_message(session: &Session, is_json: bool) -> (String, String) {
