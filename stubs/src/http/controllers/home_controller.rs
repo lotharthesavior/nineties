@@ -8,13 +8,15 @@ pub async fn home(data: web::Data<AppState>, session: Session) -> impl Responder
     let user_authenticated: &str = if is_authenticated(&session) { "true" } else { "false" };
     let app_name = &data.app_name.lock().unwrap();
 
-    HttpResponse::Ok().body(
-        load_template("home.html", vec![
+    HttpResponse::Ok().body(load_template(
+        "home.html",
+        vec![
             ("name", app_name),
             ("user_authenticated", &user_authenticated),
             ("session_message", &get_session_message(&session, false).1)
-        ], Option::from(vec!["src/resources/css/styles.css", "src/resources/js/script.js"]))
-    )
+        ],
+        None
+    ))
 }
 
 #[cfg(test)]

@@ -16,7 +16,11 @@ pub async fn dashboard(data: web::Data<AppState>, session: Session) -> HttpRespo
         return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
     }
 
-    HttpResponse::Ok().body(load_template("admin/dashboard.html", vec![("name", app_name), ("user_name", &user.unwrap().name)], None))
+    HttpResponse::Ok().body(load_template(
+        "admin/dashboard.html",
+        vec![("name", app_name), ("user_name", &user.unwrap().name)],
+        None
+    ))
 }
 
 #[get("/settings")]

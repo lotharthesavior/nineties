@@ -18,12 +18,14 @@ pub async fn signin(data: web::Data<AppState>, session: Session) -> impl Respond
 
     let session_message: (String, String) = get_session_message(&session, true);
 
-    HttpResponse::Ok().body(
-        load_template("signin.html", vec![
+    HttpResponse::Ok().body(load_template(
+        "signin.html",
+        vec![
             ("name", app_name),
             ("session_message", &*session_message.1)
-        ], None)
-    )
+        ],
+        None
+    ))
 }
 
 #[get("/signout")]

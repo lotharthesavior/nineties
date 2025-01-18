@@ -64,6 +64,14 @@ fn get_assets_string(assets: Option<Vec<&str>>) -> String {
     assets_string
 }
 
+fn get_tailwind_asset_string() -> String {
+    let mut assets_string: String = String::new();
+    assets_string.push_str("<link rel=\"stylesheet\" href=\"/styles.css\">");
+    assets_string.push_str("<script src=\"/scripts.js\" defer></script>");
+
+    assets_string
+}
+
 // Here we get the assets from the manifest.json file.
 fn get_manifest_assets() -> HashMap<String, String> {
     let mut assets: HashMap<String, String> = HashMap::new();
@@ -76,6 +84,15 @@ fn get_manifest_assets() -> HashMap<String, String> {
             let asset = value.get("file");
             if asset.is_some() {
                 assets.insert(key.to_string(), asset.unwrap().as_str().unwrap().parse().unwrap());
+
+                // If the asset is a js file, we might add css files to the assets.
+                let asset_type = asset.unwrap().as_str().unwrap().split('.').last().unwrap();
+                if asset_type == "js" {
+                    for css_file in value.get("css").unwrap().as_array().unwrap() {
+                        let css_file_name = css_file.as_str().unwrap().split('/').last().unwrap();
+                        assets.insert(css_file_name.to_string(), css_file_name.to_string());
+                    }
+                }
             }
         }
     }

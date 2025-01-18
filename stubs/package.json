@@ -8,11 +8,12 @@
     "vite": "^6.0.7"
   },
   "scripts": {
-    "build:css": "npx tailwindcss -i ./src/resources/css/styles.css -o ./dist/styles.css --watch",
     "build": "vite build",
     "dev": "vite dev"
   },
   "dependencies": {
-    "alpinejs": "^3.14.8"
+    "alpinejs": "^3.14.8",
+    "htmx.org": "^2.0.4",
+    "toastify-js": "^1.12.0"
   }
 }
