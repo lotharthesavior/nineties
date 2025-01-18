@@ -17,8 +17,11 @@ pub async fn dashboard(data: web::Data<AppState>, session: Session) -> HttpRespo
     }
 
     HttpResponse::Ok().body(load_template(
-        "admin/dashboard.html",
-        vec![("name", app_name), ("user_name", &user.unwrap().name)],
+        "admin/pages/dashboard.html",
+        vec![
+            ("name", app_name),
+            ("user_name", &user.unwrap().name),
+        ],
         None
     ))
 }
@@ -33,7 +36,14 @@ pub async fn settings(_req: HttpRequest, data: web::Data<AppState>, session: Ses
         return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
     }
 
-    HttpResponse::Ok().body(load_template("admin/settings.html", vec![("name", app_name), ("user_name", &user.unwrap().name)], None))
+    HttpResponse::Ok().body(load_template(
+        "admin/pages/settings.html",
+        vec![
+            ("name", app_name),
+            ("user_name", &user.unwrap().name)
+        ],
+        None
+    ))
 }
 
 #[cfg(test)]

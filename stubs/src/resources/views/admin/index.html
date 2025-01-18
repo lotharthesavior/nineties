@@ -3,53 +3,52 @@
 <body class="h-full">
 
 <div x-data="{
-        offCanvasOpen: false,
-        menuShow: false,
-        isActive(path) {
-            console.log(window.location.pathname === path, window.location.pathname, path);
-            return window.location.pathname === path;
-        },
-    }">
+            offCanvasOpen: false,
+            menuShow: false,
+            isActive(path) {
+                return window.location.pathname === path;
+            },
+        }">
     <div
-        class="relative z-50 lg:hidden"
-        x-show="offCanvasOpen"
-        role="dialog"
-        aria-modal="true"
+            class="relative z-50 lg:hidden"
+            x-show="offCanvasOpen"
+            role="dialog"
+            aria-modal="true"
     >
         <div
-            class="fixed inset-0 bg-gray-900/80"
-            aria-hidden="true"
-            x-transition:enter="transition-opacity ease-linear duration-300"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition-opacity ease-linear duration-300"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            x-show="offCanvasOpen"
+                class="fixed inset-0 bg-gray-900/80"
+                aria-hidden="true"
+                x-transition:enter="transition-opacity ease-linear duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="transition-opacity ease-linear duration-300"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                x-show="offCanvasOpen"
         ></div>
 
         <div class="fixed inset-0 flex">
             <div
-                class="relative mr-16 flex w-full max-w-xs flex-1"
-                x-transition:enter="transition ease-in-out duration-300 transform"
-                x-transition:enter-start="-translate-x-full"
-                x-transition:enter-end="translate-x-0"
-                x-transition:leave="transition ease-in-out duration-300 transform"
-                x-transition:leave-start="translate-x-0"
-                x-transition:leave-end="-translate-x-full"
-                x-show="offCanvasOpen"
-                @click.away="offCanvasOpen = false"
+                    class="relative mr-16 flex w-full max-w-xs flex-1"
+                    x-transition:enter="transition ease-in-out duration-300 transform"
+                    x-transition:enter-start="-translate-x-full"
+                    x-transition:enter-end="translate-x-0"
+                    x-transition:leave="transition ease-in-out duration-300 transform"
+                    x-transition:leave-start="translate-x-0"
+                    x-transition:leave-end="-translate-x-full"
+                    x-show="offCanvasOpen"
+                    @click.away="offCanvasOpen = false"
             >
                 <div
-                    class="absolute left-full top-0 flex w-16 justify-center pt-5"
-                    x-transition:enter="ease-in-out duration-300"
-                    x-transition:enter-start="opacity-0"
-                    x-transition:enter-end="opacity-100"
-                    x-transition:leave="ease-in-out duration-300"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
-                    x-show="offCanvasOpen"
-                    @click="offCanvasOpen = false"
+                        class="absolute left-full top-0 flex w-16 justify-center pt-5"
+                        x-transition:enter="ease-in-out duration-300"
+                        x-transition:enter-start="opacity-0"
+                        x-transition:enter-end="opacity-100"
+                        x-transition:leave="ease-in-out duration-300"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        x-show="offCanvasOpen"
+                        @click="offCanvasOpen = false"
                 >
                     <button @click="offCanvasOpen = false" type="button" class="-m-2.5 p-2.5">
                         <span class="sr-only">Close sidebar</span>
@@ -161,27 +160,27 @@
                             <span class="sr-only">Open user menu</span>
                             <img class="h-8 w-8 rounded-full bg-gray-50" src="https://savioresende.com/imgs/me.png" alt="">
                             <span class="hidden lg:flex lg:items-center">
-                                <span class="ml-4 text-sm/6 font-semibold text-gray-900" aria-hidden="true">{{ user_name }}</span>
-                                <svg class="ml-2 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
-                                  <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
-                                </svg>
-                            </span>
+                                    <span class="ml-4 text-sm/6 font-semibold text-gray-900" aria-hidden="true">{{ user_name }}</span>
+                                    <svg class="ml-2 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
+                                      <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                                    </svg>
+                                </span>
                         </button>
 
                         <div
-                            class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none"
-                            role="menu"
-                            aria-orientation="vertical"
-                            aria-labelledby="user-menu-button"
-                            tabindex="-1"
-                            x-transition:enter="transition ease-out duration-100"
-                            x-transition:enter-start="transform opacity-0 scale-95"
-                            x-transition:enter-end="transform opacity-100 scale-100"
-                            x-transition:leave="transition ease-in duration-75"
-                            x-transition:leave-start="transform opacity-100 scale-100"
-                            x-transition:leave-end="transform opacity-0 scale-95"
-                            x-show="menuShow"
-                            @click.away="menuShow = false"
+                                class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none"
+                                role="menu"
+                                aria-orientation="vertical"
+                                aria-labelledby="user-menu-button"
+                                tabindex="-1"
+                                x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="transform opacity-0 scale-95"
+                                x-transition:enter-end="transform opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-75"
+                                x-transition:leave-start="transform opacity-100 scale-100"
+                                x-transition:leave-end="transform opacity-0 scale-95"
+                                x-show="menuShow"
+                                @click.away="menuShow = false"
                         >
                             <!-- Active: "bg-gray-50 outline-none", Not Active: "" -->
                             <a href="#" class="block px-3 py-1 text-sm/6 text-gray-900" role="menuitem" tabindex="-1" id="user-menu-item-0">Your profile</a>
@@ -194,10 +193,11 @@
 
         <main class="py-10">
             <div class="px-4 sm:px-6 lg:px-8">
-                Settings...
+                {% block content %}{% endblock content %}
             </div>
         </main>
     </div>
 </div>
+
 </body>
 </html>
