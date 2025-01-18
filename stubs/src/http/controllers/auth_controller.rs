@@ -1,10 +1,13 @@
 use std::error::Error;
 use actix_session::Session;
-use crate::helpers::{get_from_form_body, get_session_message, is_authenticated, load_template};
 use actix_web::{get, post, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use diesel::{QueryDsl, ExpressionMethods, RunQueryDsl};
-use crate::{helpers, AppState};
+use crate::{AppState};
+use crate::helpers::database::get_connection;
+use crate::helpers::form::get_from_form_body;
+use crate::helpers::session::{get_session_message, is_authenticated};
+use crate::helpers::template::load_template;
 use crate::models::user::{User};
 use crate::schema::users::dsl::*;
 
@@ -38,7 +41,7 @@ pub async fn signout(session: Session) -> impl Responder {
 
 #[post("/signin")]
 pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
-    let conn = &mut helpers::get_connection();
+    let conn = &mut get_connection();
 
     let email_param: String = get_from_form_body("email".to_string(), req_body.clone());
     let password_param: String = get_from_form_body("password".to_string(), req_body);
@@ -106,9 +109,10 @@ mod tests {
     use actix_web::cookie::{Cookie, Key};
     use diesel::{QueryDsl, RunQueryDsl, SqliteConnection};
     use diesel_migrations::MigrationHarness;
-    use crate::{helpers, AppState};
+    use crate::{AppState};
     use crate::database::seeders::create_users::UserSeeder;
     use crate::database::seeders::traits::seeder::Seeder;
+    use crate::helpers::database::get_connection;
     use crate::http::controllers::auth_controller;
     use crate::http::middlewares::auth_middleware::AuthMiddleware;
     use crate::models::user::{MIGRATIONS};
@@ -117,7 +121,7 @@ mod tests {
 
     fn prepare_test_db() -> SqliteConnection {
         dotenv::from_filename(".env.test").ok();
-        let mut conn: SqliteConnection = helpers::get_connection();
+        let mut conn: SqliteConnection = get_connection();
         conn.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
         conn
     }

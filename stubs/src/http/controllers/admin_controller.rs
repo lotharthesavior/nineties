@@ -1,20 +1,15 @@
 use actix_session::{Session, SessionExt};
-use crate::helpers::{load_template};
 use actix_web::{get, web, HttpRequest, HttpResponse, Responder, ResponseError};
 use diesel::{QueryDsl, RunQueryDsl};
-use crate::{helpers, AppState};
+use crate::{AppState};
+use crate::helpers::session::get_session_user;
+use crate::helpers::template::load_template;
 use crate::models::user::{User};
-use crate::schema::users::dsl::users;
 
 #[get("")] // /admin - The Dashboard
 pub async fn dashboard(data: web::Data<AppState>, session: Session) -> HttpResponse {
-    let user_id: i32 = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
+    let user: Option<User> = get_session_user(&session);
     let app_name = &data.app_name.lock().unwrap();
-
-    let user = users.find(user_id).first::<User>(&mut helpers::get_connection());
-    if user.is_err() {
-        return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
-    }
 
     HttpResponse::Ok().body(load_template(
         "admin/pages/dashboard.html",
@@ -28,16 +23,26 @@ pub async fn dashboard(data: web::Data<AppState>, session: Session) -> HttpRespo
 
 #[get("/settings")]
 pub async fn settings(_req: HttpRequest, data: web::Data<AppState>, session: Session) -> impl Responder {
+    let user: Option<User> = get_session_user(&session);
     let app_name = &data.app_name.lock().unwrap();
-
-    let user_id = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
-    let user = users.find(user_id).first::<User>(&mut helpers::get_connection());
-    if user.is_err() {
-        return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
-    }
 
     HttpResponse::Ok().body(load_template(
         "admin/pages/settings.html",
+        vec![
+            ("name", app_name),
+            ("user_name", &user.unwrap().name)
+        ],
+        None
+    ))
+}
+
+#[get("/profile")]
+pub async fn profile(_req: HttpRequest, data: web::Data<AppState>, session: Session) -> impl Responder {
+    let user: Option<User> = get_session_user(&session);
+    let app_name = &data.app_name.lock().unwrap();
+
+    HttpResponse::Ok().body(load_template(
+        "admin/pages/profile.html",
         vec![
             ("name", app_name),
             ("user_name", &user.unwrap().name)
@@ -50,22 +55,23 @@ pub async fn settings(_req: HttpRequest, data: web::Data<AppState>, session: Ses
 mod tests {
     use std::env;
     use std::sync::Mutex;
-    use actix_session::{Session, SessionMiddleware};
+    use actix_session::{SessionMiddleware};
     use actix_session::storage::CookieSessionStore;
     use actix_web::{http, test, web, App};
     use actix_web::cookie::{Cookie, Key};
     use diesel::{SqliteConnection};
     use diesel_migrations::MigrationHarness;
-    use crate::{helpers, AppState};
+    use crate::{AppState};
     use crate::database::seeders::create_users::UserSeeder;
     use crate::database::seeders::traits::seeder::Seeder;
+    use crate::helpers::database::get_connection;
     use crate::http::controllers::{admin_controller, auth_controller};
     use crate::http::middlewares::auth_middleware::AuthMiddleware;
     use crate::models::user::{MIGRATIONS};
 
     fn prepare_test_db() -> SqliteConnection {
         dotenv::from_filename(".env.test").ok();
-        let mut conn: SqliteConnection = helpers::get_connection();
+        let mut conn: SqliteConnection = get_connection();
         conn.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
         conn
     }

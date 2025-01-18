@@ -28,6 +28,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                 .wrap(AuthMiddleware)
                 .service(admin_controller::dashboard)
                 .service(admin_controller::settings)
+                .service(admin_controller::profile)
         )
         .service(static_file);
 }

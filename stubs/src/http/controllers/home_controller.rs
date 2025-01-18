@@ -1,7 +1,8 @@
-use crate::helpers::{get_session_message, is_authenticated, load_template};
 use actix_web::{get, web, HttpResponse, Responder};
 use crate::AppState;
 use actix_session::Session;
+use crate::helpers::session::{get_session_message, is_authenticated};
+use crate::helpers::template::load_template;
 
 #[get("/")]
 pub async fn home(data: web::Data<AppState>, session: Session) -> impl Responder {

@@ -5,6 +5,7 @@ use actix_web::body::EitherBody;
 use diesel::{QueryDsl, RunQueryDsl};
 use futures_util::future::LocalBoxFuture;
 use crate::helpers;
+use crate::helpers::database::get_connection;
 use crate::models::user::User;
 use crate::schema::users::dsl::users;
 
@@ -46,7 +47,7 @@ where
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let session = req.get_session();
         let user_id: i32 = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
-        let user = users.find(user_id).first::<User>(&mut helpers::get_connection());
+        let user = users.find(user_id).first::<User>(&mut get_connection());
 
         match user {
             Ok(user) => {},
@@ -79,9 +80,10 @@ mod tests {
     use actix_web::cookie::{Cookie, Key};
     use diesel::{QueryDsl, RunQueryDsl, SqliteConnection};
     use diesel_migrations::MigrationHarness;
-    use crate::{helpers, AppState};
+    use crate::{AppState};
     use crate::database::seeders::create_users::UserSeeder;
     use crate::database::seeders::traits::seeder::Seeder;
+    use crate::helpers::database::get_connection;
     use crate::http::middlewares::auth_middleware::AuthMiddleware;
     use crate::models::user::{MIGRATIONS};
     use crate::schema::users::dsl::users;
@@ -89,7 +91,7 @@ mod tests {
 
     fn prepare_test_db() -> SqliteConnection {
         dotenv::from_filename(".env.test").ok();
-        let mut conn: SqliteConnection = helpers::get_connection();
+        let mut conn: SqliteConnection = get_connection();
         conn.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
         conn
     }

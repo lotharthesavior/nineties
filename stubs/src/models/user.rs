@@ -33,13 +33,13 @@ mod tests {
     use diesel_migrations::MigrationHarness;
     use crate::database::seeders::traits::seeder::Seeder;
     use crate::database::seeders::create_users::UserSeeder;
-    use crate::helpers;
+    use crate::helpers::database::get_connection;
     use crate::models::user::{NewUser, User, MIGRATIONS};
     use crate::schema::users::dsl::*;
 
     fn prepare_test_db() -> SqliteConnection {
         dotenv::from_filename(".env.test").ok();
-        let mut conn: SqliteConnection = helpers::get_connection();
+        let mut conn: SqliteConnection = get_connection();
         conn.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
         conn
     }

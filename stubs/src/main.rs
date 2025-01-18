@@ -11,8 +11,8 @@ use diesel_migrations::MigrationHarness;
 use tokio::io::{AsyncBufReadExt};
 use crate::database::seeders::create_users::{UserSeeder};
 use crate::database::seeders::traits::seeder::Seeder;
+use crate::helpers::database::get_connection;
 
-mod helpers;
 mod routes;
 mod http {
     pub mod middlewares {
@@ -46,6 +46,14 @@ mod console {
     pub mod development;
 }
 
+mod helpers {
+    pub mod session;
+    pub mod database;
+    pub mod form;
+    pub mod general;
+    pub mod template;
+}
+
 #[derive(Debug)]
 struct AppState {
     app_name: Mutex<String>,
@@ -60,7 +68,7 @@ fn check_app_health() {
     }
 
     if !fs::exists(PathBuf::from("database/database.sqlite")).unwrap() {
-        let mut conn: SqliteConnection = helpers::get_connection();
+        let mut conn: SqliteConnection = get_connection();
         conn.run_pending_migrations(models::user::MIGRATIONS).expect("Failed to run migrations");
     }
 }
@@ -112,13 +120,13 @@ async fn main() -> std::io::Result<()> {
         }
         "migrate" => {
             println!("Running migrations...");
-            let mut conn: SqliteConnection = helpers::get_connection();
+            let mut conn: SqliteConnection = get_connection();
             conn.run_pending_migrations(models::user::MIGRATIONS).expect("Failed to run migrations");
             Ok(())
         }
         "seed" => {
             println!("Running seeders...");
-            let _ = UserSeeder::execute(&mut helpers::get_connection()).expect("Failed to seed users table");
+            let _ = UserSeeder::execute(&mut get_connection()).expect("Failed to seed users table");
             Ok(())
         }
         _ => {
