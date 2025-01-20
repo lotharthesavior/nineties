@@ -41,6 +41,7 @@ jobs:
       - name: Release
         id: create_release
         uses: softprops/action-gh-release@v2
-        body: |
-          Nineties is a CLI tool that allows you to generate a project structure for a new Rust project.
-          Visit https://crates.io/crates/nineties for more information.
+        with:
+          body: |
+            Nineties is a CLI tool that allows you to generate a project structure for a new Rust project.
+            Visit https://crates.io/crates/nineties for more information.
