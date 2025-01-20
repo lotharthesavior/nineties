@@ -15,7 +15,7 @@ fn main() -> Result<(), Error> {
     let current_dir: PathBuf = env::current_dir().expect("Failed to get current directory");
     let environment: String = env::var("ENVIRONMENT").unwrap();
 
-    let args: Vec<String> = std::env::args().collect();
+    let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
         println!("Please provide a project name");
