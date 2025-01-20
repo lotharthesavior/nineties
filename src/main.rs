@@ -29,12 +29,7 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
-    let mut stub_dir: Dir;
-    if environment == "debian" {
-        stub_dir = include_dir!("/var/www/Agency/nineties/stubs");
-    } else {
-        stub_dir = include_dir!("stubs");
-    }
+    let stub_dir: Dir = include_dir!("stubs");
 
     println!("Creating project {}...", args[1]);
     create_project_assets(
