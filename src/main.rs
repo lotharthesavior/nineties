@@ -30,7 +30,7 @@ fn main() -> Result<(), Error> {
     let destination = current_dir.join(&args[1]);
 
     let mut stub_dir: Dir;
-    if environment == "local-debian" {
+    if environment == "debian" {
         stub_dir = include_dir!("/var/www/Agency/nineties/stubs");
     } else {
         stub_dir = include_dir!("stubs");
