@@ -6,17 +6,20 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
-  actions: read
-  checks: read
-  deployments: write
-  issues: read
-  metadata: read
-  packages: write
-  pull-requests: read
-  repository-projects: read
-  security-events: read
-  statuses: read
+  actions: read|write
+  attestations: read|write
+  checks: read|write
+  contents: read|write
+  deployments: read|write
+  id-token: write
+  issues: read|write
+  discussions: read|write
+  packages: read|write
+  pages: read|write
+  pull-requests: read|write
+  repository-projects: read|write
+  security-events: read|write
+  statuses: read|write
 
 jobs:
   build:
