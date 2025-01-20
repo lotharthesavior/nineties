@@ -13,7 +13,6 @@ fn main() -> Result<(), Error> {
     dotenv().ok();
 
     let current_dir: PathBuf = env::current_dir().expect("Failed to get current directory");
-    let environment: String = env::var("ENVIRONMENT").unwrap();
 
     let args: Vec<String> = env::args().collect();
 

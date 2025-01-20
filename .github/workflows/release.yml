@@ -32,28 +32,15 @@ jobs:
         id: locate_binary
         run: echo "path=$(pwd)/target/release/nineties" >> $GITHUB_OUTPUT
 
-#      - name: Create GitHub Release
-#        id: create_release
-#        uses: actions/create-release@v2
-#        env:
-#          # GITHUB_TOKEN: ${{ secrets.PAT_NINETIES }}
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#        with:
-#          tag_name: ${{ github.ref }}
-#          release_name: Release ${{ github.ref }}
-#          draft: false
-#          prerelease: false
+      - name: Upload Binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: nineties_binary
+          path: ${{ steps.locate_binary.outputs.path }}
 
       - name: Release
         id: create_release
         uses: softprops/action-gh-release@v2
-
-#      - name: Upload Release Asset
-#        uses: actions/upload-release-asset@v1
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.PAT_NINETIES }}
-#        with:
-#          upload_url: ${{ steps.create_release.outputs.upload_url }}
-#          asset_path: ${{ steps.locate_binary.outputs.path }}
-#          asset_name: nineties
-#          asset_content_type: application/octet-stream
+        body: |
+          Nineties is a CLI tool that allows you to generate a project structure for a new Rust project.
+          Visit https://crates.io/crates/nineties for more information.
