@@ -1,3 +1,4 @@
+use std::env;
 use std::io::{BufRead, Error};
 use std::path::{PathBuf};
 use include_dir::{include_dir, Dir};
@@ -8,7 +9,9 @@ mod procedures {
 }
 
 fn main() -> Result<(), Error> {
-    let current_dir: PathBuf = std::env::current_dir().expect("Failed to get current directory");
+    let current_dir: PathBuf = env::current_dir().expect("Failed to get current directory");
+    let environment: String = env::var("ENVIRONMENT").unwrap();
+
     let args: Vec<String> = std::env::args().collect();
 
     if args.len() < 2 {
@@ -23,11 +26,12 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
-    // This is needed for linux (seems only debian) to get the stubs
-    #[cfg(not(target_os = "linux"))]
-    let stub_dir: Dir = include_dir!("stubs");
-    #[cfg(all(target_os = "linux"))]
-    let stub_dir: Dir = include_dir!("/var/www/Agency/nineties/stubs");
+    let mut stub_dir: Dir;
+    if environment == "local-debian" {
+        stub_dir = include_dir!("/var/www/Agency/nineties/stubs");
+    } else {
+        stub_dir = include_dir!("stubs");
+    }
 
     println!("Creating project {}...", args[1]);
     create_project_assets(

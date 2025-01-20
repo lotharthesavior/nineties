@@ -24,7 +24,9 @@ jobs:
           override: true
 
       - name: Build Release
-        run: cargo build --release
+        run: |
+          cp .env.example .env
+          cargo build --release
 
       - name: Locate Binary
         id: locate_binary
