@@ -2,7 +2,7 @@ use std::error::Error;
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use diesel::{QueryDsl, ExpressionMethods, RunQueryDsl};
+use diesel::{QueryDsl, ExpressionMethods, RunQueryDsl, SqliteConnection};
 use crate::{AppState};
 use crate::helpers::database::get_connection;
 use crate::helpers::form::get_from_form_body;
@@ -10,6 +10,7 @@ use crate::helpers::session::{get_session_message, is_authenticated};
 use crate::helpers::template::load_template;
 use crate::models::user::{User};
 use crate::schema::users::dsl::*;
+use crate::services::user_service::{validate_user_credentials, UserValidationResult};
 
 #[get("/signin")]
 pub async fn signin(data: web::Data<AppState>, session: Session) -> impl Responder {
@@ -41,8 +42,6 @@ pub async fn signout(session: Session) -> impl Responder {
 
 #[post("/signin")]
 pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
-    let conn = &mut get_connection();
-
     let email_param: String = get_from_form_body("email".to_string(), req_body.clone());
     let password_param: String = get_from_form_body("password".to_string(), req_body);
 
@@ -52,50 +51,47 @@ pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
             "success": ""
         })).unwrap();
 
-        return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
+        return HttpResponse::Found().insert_header(("Location", "/signin")).finish()
     }
 
-    let user = users
-        .filter(email.eq(&email_param))
-        .load::<User>(conn)
-        .expect("Failed to load users");
+    match validate_user_credentials(&email_param, &password_param) {
+        UserValidationResult::InvalidEmail => {
+            session.insert("message", serde_json::json!({
+                "error": "Invalid credentials",
+                "success": ""
+            })).unwrap();
 
-    if user.len() == 0 {
-        session.insert("message", serde_json::json!({
-            "error": "Invalid credentials",
-            "success": ""
-        })).unwrap();
+            HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+        },
+        UserValidationResult::InvalidPasswordHash => {
+            println!("Invalid credentials: Couldn't parse password hash");
+            session.insert("message", serde_json::json!({
+                "error": "Invalid credentials",
+                "success": ""
+            })).unwrap();
 
-        return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
-    }
+            HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+        },
+        UserValidationResult::Invalid => {
+            session.insert("message", serde_json::json!({
+                "error": "Invalid credentials",
+                "success": ""
+            })).unwrap();
 
-    let user: &User = user.first().unwrap();
-    let parsed_hash = PasswordHash::new(&user.password);
-    if parsed_hash.is_err() {
-        println!("Invalid credentials: Couldn't parse password hash");
-        session.insert("message", serde_json::json!({
-            "error": "Invalid credentials",
-            "success": ""
-        })).unwrap();
+            HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+        },
+        UserValidationResult::Valid => {
+            let user_results = users
+                .filter(email.eq(&email_param))
+                .load::<User>(&mut get_connection())
+                .expect("Failed to load users");
 
-        return HttpResponse::Found().insert_header(("Location", "/signin")).finish();
-    }
+            let user = user_results.first().unwrap();
 
-    let password_verified: bool = Argon2::default()
-        .verify_password((&*password_param).as_ref(), &parsed_hash.unwrap())
-        .is_ok();
+            session.insert("user_id", user.id).unwrap();
 
-    if password_verified {
-        session.insert("user_id", user.id).unwrap();
-
-        HttpResponse::Found().insert_header(("Location", "/admin")).finish()
-    } else {
-        session.insert("message", serde_json::json!({
-            "error": "Invalid credentials",
-            "success": ""
-        })).unwrap();
-
-        HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+            HttpResponse::Found().insert_header(("Location", "/admin")).finish()
+        }
     }
 }
 
@@ -108,32 +104,40 @@ mod tests {
     use actix_web::{http, test, web, App, HttpRequest, HttpResponse};
     use actix_web::cookie::{Cookie, Key};
     use diesel::{QueryDsl, RunQueryDsl, SqliteConnection};
+    use diesel::r2d2::{ConnectionManager, PooledConnection};
     use diesel_migrations::MigrationHarness;
+    use serial_test::serial;
     use crate::{AppState};
     use crate::database::seeders::create_users::UserSeeder;
     use crate::database::seeders::traits::seeder::Seeder;
     use crate::helpers::database::get_connection;
+    use crate::helpers::test::TestFinalizer;
     use crate::http::controllers::auth_controller;
     use crate::http::middlewares::auth_middleware::AuthMiddleware;
     use crate::models::user::{MIGRATIONS};
     use crate::schema::users::dsl::users;
     use crate::schema::users::{id};
 
-    fn prepare_test_db() -> SqliteConnection {
+    fn prepare_test_db() -> PooledConnection<ConnectionManager<SqliteConnection>> {
         dotenv::from_filename(".env.test").ok();
-        let mut conn: SqliteConnection = get_connection();
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
         conn.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
+
         conn
     }
 
     fn seed_users_table() {
-        let mut conn: SqliteConnection = prepare_test_db();
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
         UserSeeder::execute(&mut conn).expect("Failed to seed users table");
     }
 
+    #[serial]
     #[actix_web::test]
     async fn test_signin_route() {
-        let mut conn: SqliteConnection = prepare_test_db();
+        let _finalizer = TestFinalizer;
+
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
+        seed_users_table();
         let all_users: Vec<i32> = users.select(id).load::<i32>(&mut conn).unwrap();
         let user_id: i32 = all_users[0];
 

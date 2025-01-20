@@ -29,6 +29,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                 .service(admin_controller::dashboard)
                 .service(admin_controller::settings)
                 .service(admin_controller::profile)
+                .service(admin_controller::profile_post)
+                .service(admin_controller::profile_password_post)
         )
         .service(static_file);
 }

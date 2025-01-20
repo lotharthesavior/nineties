@@ -17,6 +17,10 @@ pub fn load_template(template: &str, params: Vec<(&str, &str)>, assets: Option<V
         context.insert(key, value);
     }
 
+    if !context.contains_key("session_message") {
+        context.insert("session_message", "");
+    }
+
     context.insert("assets", &get_assets_string(assets));
 
     tera.render(template, &context).expect("Failed to render template")

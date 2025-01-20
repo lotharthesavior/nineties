@@ -1,3 +1,5 @@
+{% import "parts/components.html" as components %}
+
 {% include "parts/html-head.html" %}
 
 <body class="h-full">
@@ -13,6 +15,7 @@
     {% include "admin/parts/side-menu.html" %}
 
     <div class="lg:pl-72">
+        {% include "parts/notification.html" %}
         {% include "admin/parts/top-menu.html" %}
 
         <main class="py-10">

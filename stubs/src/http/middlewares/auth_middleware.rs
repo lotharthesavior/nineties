@@ -4,7 +4,6 @@ use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, T
 use actix_web::body::EitherBody;
 use diesel::{QueryDsl, RunQueryDsl};
 use futures_util::future::LocalBoxFuture;
-use crate::helpers;
 use crate::helpers::database::get_connection;
 use crate::models::user::User;
 use crate::schema::users::dsl::users;
@@ -79,31 +78,39 @@ mod tests {
     use actix_web::{http, test, web, App, HttpRequest, HttpResponse};
     use actix_web::cookie::{Cookie, Key};
     use diesel::{QueryDsl, RunQueryDsl, SqliteConnection};
+    use diesel::r2d2::{ConnectionManager, PooledConnection};
     use diesel_migrations::MigrationHarness;
+    use serial_test::serial;
     use crate::{AppState};
     use crate::database::seeders::create_users::UserSeeder;
     use crate::database::seeders::traits::seeder::Seeder;
     use crate::helpers::database::get_connection;
+    use crate::helpers::test::TestFinalizer;
     use crate::http::middlewares::auth_middleware::AuthMiddleware;
     use crate::models::user::{MIGRATIONS};
     use crate::schema::users::dsl::users;
     use crate::schema::users::{id};
 
-    fn prepare_test_db() -> SqliteConnection {
+    fn prepare_test_db() -> PooledConnection<ConnectionManager<SqliteConnection>> {
         dotenv::from_filename(".env.test").ok();
-        let mut conn: SqliteConnection = get_connection();
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
         conn.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
+
         conn
     }
 
     fn seed_users_table() {
-        let mut conn: SqliteConnection = prepare_test_db();
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
         UserSeeder::execute(&mut conn).expect("Failed to seed users table");
     }
 
+    #[serial]
     #[actix_web::test]
     async fn test_auth_middleware() {
-        let mut conn: SqliteConnection = prepare_test_db();
+        let _finalizer = TestFinalizer;
+
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
+        seed_users_table();
         let all_users: Vec<i32> = users.select(id).load::<i32>(&mut conn).unwrap();
         let user_id: i32 = all_users[0];
 

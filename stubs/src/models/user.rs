@@ -27,31 +27,38 @@ pub struct NewUser<'a> {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
     use actix_web::test;
     use diesel::{QueryDsl, RunQueryDsl, SqliteConnection, ExpressionMethods, Connection};
+    use diesel::r2d2::{ConnectionManager, PooledConnection};
     use diesel::result::Error;
     use diesel_migrations::MigrationHarness;
+    use serial_test::serial;
     use crate::database::seeders::traits::seeder::Seeder;
     use crate::database::seeders::create_users::UserSeeder;
     use crate::helpers::database::get_connection;
+    use crate::helpers::test::TestFinalizer;
     use crate::models::user::{NewUser, User, MIGRATIONS};
     use crate::schema::users::dsl::*;
 
-    fn prepare_test_db() -> SqliteConnection {
+    fn prepare_test_db() -> PooledConnection<ConnectionManager<SqliteConnection>> {
         dotenv::from_filename(".env.test").ok();
-        let mut conn: SqliteConnection = get_connection();
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
         conn.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
         conn
     }
 
     fn seed_users_table() {
-        let mut conn: SqliteConnection = prepare_test_db();
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
         UserSeeder::execute(&mut conn).expect("Failed to seed users table");
     }
 
+    #[serial]
     #[actix_web::test]
     async fn test_can_create_user() {
-        let mut conn: SqliteConnection = prepare_test_db();
+        let _finalizer = TestFinalizer;
+
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
 
         conn.test_transaction::<_, Error, _>(|conn| {
             let expected_email: String = "john@email.com".to_string();
@@ -72,9 +79,12 @@ mod tests {
         });
     }
 
+    #[serial]
     #[actix_web::test]
     async fn test_can_delete_user() {
-        let mut conn: SqliteConnection = prepare_test_db();
+        let _finalizer = TestFinalizer;
+
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
 
         conn.test_transaction::<_, Error, _>(|conn| {
             seed_users_table();
@@ -93,11 +103,14 @@ mod tests {
         });
     }
 
+    #[serial]
     #[actix_web::test]
     async fn test_can_retrieve_user_by_id() {
-        let mut conn: SqliteConnection = prepare_test_db();
+        let _finalizer = TestFinalizer;
 
-        conn.test_transaction::<_, Error, _>(|conn: &mut SqliteConnection| {
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
+
+        conn.test_transaction::<_, Error, _>(|conn: &mut PooledConnection<ConnectionManager<SqliteConnection>>| {
             seed_users_table();
 
             let all_users: Vec<i32> = users.select(id).load::<i32>(conn).unwrap();
@@ -108,6 +121,40 @@ mod tests {
 
             assert!(user.is_ok());
             assert!(user2.is_err());
+
+            Ok(())
+        });
+    }
+
+    #[serial]
+    #[actix_web::test]
+    async fn test_can_update_user() {
+        let _finalizer = TestFinalizer;
+
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
+
+        conn.test_transaction::<_, Error, _>(|conn: &mut PooledConnection<ConnectionManager<SqliteConnection>>| {
+            seed_users_table();
+
+            let all_users: Vec<i32> = users.select(id).load::<i32>(conn).unwrap();
+            let user_id: i32 = all_users[0];
+
+            let user: Result<User, Error> = users.find(user_id).first::<User>(conn);
+            assert!(user.is_ok());
+
+            let new_email: &str = "newemail@example.com";
+
+            let result = diesel::update(users.find(user_id))
+                .set(email.eq(new_email))
+                .execute(conn)
+                .unwrap();
+            assert_eq!(result, 1);
+
+            let user: Result<User, Error> = users
+                .filter(email.eq(new_email))
+                .first::<User>(conn);
+            assert!(user.is_ok());
+            assert_eq!(user.unwrap().email, new_email);
 
             Ok(())
         });

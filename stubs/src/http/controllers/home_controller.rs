@@ -22,13 +22,19 @@ pub async fn home(data: web::Data<AppState>, session: Session) -> impl Responder
 
 #[cfg(test)]
 mod tests {
+    use std::env;
     use std::sync::Mutex;
     use actix_web::{http, test, web, App};
+    use serial_test::serial;
     use crate::{AppState};
+    use crate::helpers::test::TestFinalizer;
     use crate::http::controllers::home_controller;
 
+    #[serial]
     #[actix_web::test]
     async fn test_home() {
+        let _finalizer = TestFinalizer;
+
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(AppState {

@@ -1,10 +1,8 @@
-use argon2::password_hash::rand_core::OsRng;
-use argon2::password_hash::SaltString;
-use argon2::{Argon2, PasswordHasher};
 use diesel::{Insertable, QueryDsl, RunQueryDsl, SqliteConnection};
 use crate::database::seeders::traits::seeder::Seeder;
 use crate::models::user::NewUser;
 use crate::schema::users::dsl::*;
+use crate::services::user_service::prepare_password;
 
 pub struct UserSeeder;
 
@@ -18,16 +16,11 @@ impl Seeder for UserSeeder {
             return Ok(());
         }
 
-        let password_bytes = b"password";
-        let salt = SaltString::generate(&mut OsRng);
-        let argon2 = Argon2::default();
-        let password_hash = argon2.hash_password(password_bytes, &salt).unwrap().to_string();
-
         println!("Creating users...");
         let _ = diesel::insert_into(users).values(NewUser {
             name: "Jekyll",
             email: expected_email,
-            password: &*password_hash,
+            password: &*prepare_password("password"),
         }).execute(conn);
 
         Ok(())

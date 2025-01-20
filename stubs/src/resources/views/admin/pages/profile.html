@@ -1,5 +1,212 @@
 {% extends "admin/index.html" %}
 
 {% block content %}
-Profile
+<div class="space-y-12" x-data="profileform">
+    <div class="border-b border-gray-900/10 pb-12">
+        <h2 class="text-base/7 font-semibold text-gray-900">Profile</h2>
+        <p class="mt-1 text-sm/6 text-gray-600">This information will be displayed publicly so be careful what you share.</p>
+
+        <form id="profile-form" hx-post="/admin/profile" hx-swap="none" hx-indicator="#profile-indicator">
+            <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                <div class="sm:col-span-4">
+                    <label for="name" class="block text-sm/6 font-medium text-gray-900">Name</label>
+                    <div class="mt-2">
+                        <input
+                            type="text"
+                            name="name"
+                            id="name"
+                            class="block w-full max-w-96 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6 invalid:outline-red-600"
+                            placeholder="Jekyll Hyde"
+                            x-model="user_name"
+                            required
+                            minlength="3"
+                            maxlength="45"
+                        >
+                    </div>
+                </div>
+
+                <div class="sm:col-span-4">
+                    <label for="email" class="block text-sm/6 font-medium text-gray-900">Email</label>
+                    <div class="mt-2">
+                        <input
+                            type="email"
+                            name="email"
+                            id="email"
+                            class="block w-full max-w-96 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6 invalid:outline-red-600"
+                            placeholder="you@example.com"
+                            x-model="user_email"
+                            required
+                            minlength="3"
+                            maxlength="45"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-12 flex gap-2">
+                <button :disabled="waitingProfileSubmission" type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Save</button>
+                {{ components::indicator(label="profile-indicator") }}
+            </div>
+        </form>
+    </div>
+
+    <div class="pb-12">
+        <h2 class="text-base/7 font-semibold text-gray-900">Password</h2>
+
+        <form id="password-form" hx-post="/admin/profile-password" hx-swap="none" hx-indicator="#password-indicator">
+            <input type="hidden" name="current_email" x-model="current_email">
+            <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                <div class="sm:col-span-4">
+                    <label for="old_password" class="block text-sm/6 font-medium text-gray-900">Old Password</label>
+                    <div class="mt-2">
+                        <input
+                            type="password"
+                            name="old_password"
+                            id="old_password"
+                            class="block w-full max-w-96 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6"
+                            x-model="old_password"
+                            required
+                            minlength="5"
+                            maxlength="45"
+                        >
+                    </div>
+                </div>
+
+                <div class="sm:col-span-4">
+                    <label for="new_password" class="block text-sm/6 font-medium text-gray-900">New Password</label>
+                    <div class="mt-2">
+                        <input
+                            type="password"
+                            name="new_password"
+                            id="new_password"
+                            class="block w-full max-w-96 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6"
+                            x-model="new_password"
+                            required
+                            minlength="5"
+                            maxlength="45"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-12 flex gap-2">
+                <button type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Save</button>
+                {{ components::indicator(label="password-indicator") }}
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('profileform', () => ({
+                // profile
+                user_name: "{{ user_name }}",
+                user_email: "{{ user_email }}",
+                // password
+                current_email: "{{ user_email }}",
+                old_password: "",
+                new_password: "",
+
+                waitingProfileSubmission: false,
+                waitingPasswordSubmission: false,
+
+                init: function() {
+                    document.addEventListener('htmx:beforeRequest', this.beforeRequest.bind(this));
+
+                    document.addEventListener('htmx:afterOnLoad', this.afterOnLoad.bind(this));
+                },
+
+                /**
+                 * @param {Event} event
+                 */
+                beforeRequest(event) {
+                    if ('profile-form' === event.detail.target.id) this.beforeProfileFormSubmit(event);
+                    if ('password-form' === event.detail.target.id) this.beforePasswordFormSubmit(event);
+                },
+
+                /**
+                 * @param {Event} event
+                 */
+                afterOnLoad(event) {
+                    console.log(event.type);
+                    if ('profile-form' === event.detail.target.id) this.afterProfileFormResponse(event);
+                    if ('password-form' === event.detail.target.id) this.afterPasswordFormResponse(event);
+                },
+
+                /**
+                 * @param {String} message
+                 * @param {String} type
+                 */
+                notifyUser(message, type) {
+                    window.dispatchEvent(new CustomEvent('notify', {
+                        detail: {
+                            message: message,
+                            type: type,
+                        },
+                    }));
+                },
+
+                // ----------------------------------------------
+                // Profile Form
+                // ----------------------------------------------
+
+                /**
+                 * @param {Event} event
+                 */
+                beforeProfileFormSubmit: function(event) {
+                    this.waitingProfileSubmission = true;
+                },
+
+                /**
+                 * @param {Event} event
+                 */
+                afterProfileFormResponse: function(event) {
+                    this.waitingProfileSubmission = false;
+
+                    let response = JSON.parse(event.detail.xhr.response);
+
+                    if (event.detail.xhr.status === 500) {
+                        this.notifyUser("Failed to update profile", "error");
+                        if (response.errors) console.error(Object.values(response.errors))
+                        return;
+                    }
+
+                    this.user_name = response.data.name;
+                    this.user_email = response.data.email;
+                    this.notifyUser("Profile updated successfully", "success");
+                },
+
+                // ----------------------------------------------
+                // Password Form
+                // ----------------------------------------------
+
+                /**
+                 * @param {Event} event
+                 */
+                beforePasswordFormSubmit: function(event) {
+                    this.waitingPasswordSubmission = true;
+                },
+
+                /**
+                 * @param {Event} event
+                 */
+                afterPasswordFormResponse: function(event) {
+                    this.waitingPasswordSubmission = false;
+
+                    let response = JSON.parse(event.detail.xhr.response);
+
+                    if (event.detail.xhr.status === 500) {
+                        this.notifyUser("Failed to update password", "error");
+                        if (response.errors) console.error(Object.values(response.errors))
+                        return;
+                    }
+
+                    this.old_password = "";
+                    this.new_password = "";
+                    this.notifyUser("Password updated successfully", "success");
+                },
+            }))
+        });
+    </script>
+</div>
 {% endblock %}

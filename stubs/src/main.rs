@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 use actix_web::cookie::Key;
 use actix_web::middleware::NormalizePath;
+use diesel::r2d2::{ConnectionManager, PooledConnection};
 use diesel::SqliteConnection;
 use diesel_migrations::MigrationHarness;
 use tokio::io::{AsyncBufReadExt};
@@ -52,6 +53,11 @@ mod helpers {
     pub mod form;
     pub mod general;
     pub mod template;
+    pub mod test;
+}
+
+mod services {
+    pub mod user_service;
 }
 
 #[derive(Debug)]
@@ -68,7 +74,7 @@ fn check_app_health() {
     }
 
     if !fs::exists(PathBuf::from("database/database.sqlite")).unwrap() {
-        let mut conn: SqliteConnection = get_connection();
+        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
         conn.run_pending_migrations(models::user::MIGRATIONS).expect("Failed to run migrations");
     }
 }
@@ -120,7 +126,7 @@ async fn main() -> std::io::Result<()> {
         }
         "migrate" => {
             println!("Running migrations...");
-            let mut conn: SqliteConnection = get_connection();
+            let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
             conn.run_pending_migrations(models::user::MIGRATIONS).expect("Failed to run migrations");
             Ok(())
         }
