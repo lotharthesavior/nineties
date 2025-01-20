@@ -1,3 +1,4 @@
+use dotenv::dotenv;
 use std::env;
 use std::io::{BufRead, Error};
 use std::path::{PathBuf};
@@ -9,6 +10,8 @@ mod procedures {
 }
 
 fn main() -> Result<(), Error> {
+    dotenv().ok();
+
     let current_dir: PathBuf = env::current_dir().expect("Failed to get current directory");
     let environment: String = env::var("ENVIRONMENT").unwrap();
 

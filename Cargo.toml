@@ -18,4 +18,5 @@ name = "nineties"
 path = "src/main.rs"
 
 [dependencies]
+dotenv = "0.15.0"
 include_dir = "0.7.4"
