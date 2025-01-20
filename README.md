@@ -1,9 +1,10 @@
 
-# Nineties
+<h1 align="center">Nineties
+<img src="assets/nineties-logo.png" alt="Nineties - Web App" style="width: 44px; height: 44px;" width="44" height="44" /></h1>
 
-This is a traditional starter for web with rust on top of [Actix](https://actix.rs).
+This is a starter for web with rust on top of [Actix](https://actix.rs).
 
-The started app has a login wall and everything you need to start: a basic MVC structure.
+Spend time with **your ideas** on top of a solid foundation.
 
 It creates an MVC structure with the following structure:
 
@@ -14,55 +15,74 @@ my-project/
 ├── database
 ├── diesel.toml
 ├── dist
-│ └── imgs
-│     └── nineties-logo.png
 ├── migrations
-│ └── 2024-12-16-134059_create_users
-│     ├── down.sql
-│     └── up.sql
+│   └── 2024-12-16-134059_create_users
+│       ├── down.sql
+│       └── up.sql
 ├── package.json
 ├── package-lock.json
+├── postcss.config.js
 ├── src
-│ ├── console
-│ │ └── development.rs
-│ ├── database
-│ │ └── seeders
-│ │     └── create_users.rs
-│ ├── helpers.rs
-│ ├── http
-│ │ ├── controllers
-│ │ │ ├── admin_controller.rs
-│ │ │ ├── auth_controller.rs
-│ │ │ └── home_controller.rs
-│ │ └── middlewares
-│ │     └── auth_middleware.rs
-│ ├── main.rs
-│ ├── models
-│ │ └── user.rs
-│ ├── resources
-│ │ ├── css
-│ │ │ └── styles.css
-│ │ ├── imgs
-│ │ │ └── nineties-logo.png
-│ │ ├── js
-│ │ │ └── script.js
-│ │ └── views
-│ │     ├── admin
-│ │     │ ├── dashboard.html
-│ │     │ ├── parts
-│ │     │ ├── settings.html
-│ │     │ └── signin-form.html
-│ │     ├── home.html
-│ │     ├── parts
-│ │     │ ├── footer.html
-│ │     │ ├── header.html
-│ │     │ ├── hero.html
-│ │     │ ├── html-head.html
-│ │     │ └── notification.html
-│ │     └── signin.html
-│ ├── routes.rs
-│ └── schema.rs
-└── tailwind.config.js
+│   ├── console
+│   │   └── development.rs
+│   ├── database
+│   │   └── seeders
+│   │       ├── create_users.rs
+│   │       ├── mod.rs
+│   │       └── traits
+│   │           ├── mod.rs
+│   │           └── seeder.rs
+│   ├── helpers
+│   │   ├── database.rs
+│   │   ├── form.rs
+│   │   ├── general.rs
+│   │   ├── session.rs
+│   │   ├── template.rs
+│   │   └── test.rs
+│   ├── http
+│   │   ├── controllers
+│   │   │   ├── admin_controller.rs
+│   │   │   ├── auth_controller.rs
+│   │   │   └── home_controller.rs
+│   │   └── middlewares
+│   │       └── auth_middleware.rs
+│   ├── main.rs
+│   ├── models
+│   │   └── user.rs
+│   ├── resources
+│   │   ├── css
+│   │   │   └── styles.css
+│   │   ├── imgs
+│   │   │   └── nineties-logo.png
+│   │   ├── js
+│   │   │   └── script.js
+│   │   └── views
+│   │       ├── admin
+│   │       │   ├── index.html
+│   │       │   ├── pages
+│   │       │   │   ├── dashboard.html
+│   │       │   │   ├── profile.html
+│   │       │   │   └── settings.html
+│   │       │   ├── parts
+│   │       │   │   ├── side-menu.html
+│   │       │   │   └── top-menu.html
+│   │       │   └── signin-form.html
+│   │       ├── home.html
+│   │       ├── parts
+│   │       │   ├── components.html
+│   │       │   ├── footer.html
+│   │       │   ├── header.html
+│   │       │   ├── hero.html
+│   │       │   ├── html-head.html
+│   │       │   ├── notification.html
+│   │       │   └── open-graph.html
+│   │       └── signin.html
+│   ├── routes.rs
+│   ├── schema.rs
+│   └── services
+│       └── user_service.rs
+├── tailwind.config.js
+└── vite.config.js
 ```
 
 ## Quick Start
@@ -106,7 +126,7 @@ That's it, now you can develop.
 
 ## Frontend
 
-The UI is based in on [Tera](https://keats.github.io/tera/) templating engine, [Tailwind CSS](https://tailwindcss.com/) and [AlpineJS](https://alpinejs.dev/).
+The UI is based in on [Tera](https://keats.github.io/tera/) templating engine, [Tailwind CSS](https://tailwindcss.com/) and [AlpineJS](https://alpinejs.dev/) + [HTMX](https://htmx.org).
 
 ### Assets
 
@@ -127,16 +147,20 @@ The UI assets sit in the `resources` folder:
 
 The endpoints starting with `/public` are served from the `dist` folder at the root of your project.
 
-### Bundling CSS
+### Bundling
 
 When you run `cargon run develop`, you have 2 processes running:
 
 1. The web server
-2. The tailwind bundling
+2. The Vite bundling
 
-The tailwind bundling will watch for changes in the `resources/css/styles.css` and will bundle it to `dist/styles.css`.
+The vite bundling will watch for changes in the following files and bundle them into `dist/` directory:
 
-That is specified in the command `npm run watch:css` in the `package.json` file.
+- `resources/css/styles.css`
+- `resources/js/script.js` <- you can also include your css here
+- `resources/imgs/**/*` <- these will be just copied
+
+That is specified in the command `dev` (`npm run dev`) in the `package.json` file.
 
 ### Views
 
@@ -144,18 +168,24 @@ The base views folder has the following structure:
 
 ```
 ├── admin <- Behind login wall
-    ├── dashboard.html
-    ├── parts
-    ├── settings.html
-    └── signin-form.html
-├── home.html
-├── parts
-    ├── footer.html
-    ├── header.html
-    ├── hero.html
-    ├── html-head.html
-    └── notification.html
-└── signin.html
+    ├── ...
+└── ... <- Public views
+```
+
+### Components
+
+The components are located in the `parts/components` folder. They are included in the views using the `{% include "parts/components.html" %}` syntax. These components are Tera macros, and one example is the following:
+
+```html
+{% macro my_div(label) %}
+    <div id="{{ label }}" ...></div>
+{% endmacro my_div %}
+```
+
+This component can be called like following
+
+```html
+{{ my_div("my-div") }}
 ```
 
 ### Notifications
@@ -230,11 +260,15 @@ Your new seeders must implement the `Seeder` trait.
 - [x] Basic session based notifications
 - [x] Basic hero section, footer, header
 - [x] Tests
+- [x] JS Bundling
+- [x] AlpineJS + HTMX
+- [x] Basic form validation
+- [x] UI Components
+- [x] Profile CRUD
 
 ## Roadmap
 
 - [ ] WebSockets for realtime interactions
-- [ ] JS Bundling?
 - [ ] Wrap diesel rollback command, and add that to our `main.rs` entrypoint available commands
 
 ## Contributing
