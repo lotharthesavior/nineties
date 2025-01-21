@@ -2,6 +2,8 @@
 <h1 align="center">Nineties
 <img src="assets/nineties-logo.png" alt="Nineties - Web App" style="width: 44px; height: 44px;" width="44" height="44" /></h1>
 
+[![Build and Release](https://github.com/lotharthesavior/nineties/actions/workflows/release.yml/badge.svg)](https://github.com/lotharthesavior/nineties/actions/workflows/release.yml) [![Build and Test](https://github.com/lotharthesavior/nineties/actions/workflows/tests.yml/badge.svg)](https://github.com/lotharthesavior/nineties/actions/workflows/tests.yml)
+
 This is a starter for web with rust on top of [Actix](https://actix.rs).
 
 Spend time with **your ideas** on top of a solid foundation.
