@@ -21,4 +21,6 @@ jobs:
           override: true
 
       - name: Run Tests
-        run: cargo test
+        run: |
+          source ./prepare-environment.sh
+          cargo test

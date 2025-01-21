@@ -25,6 +25,7 @@ jobs:
 
       - name: Build Release
         run: |
+          source ./prepare-environment.sh
           cp .env.example .env
           cargo build --release
 
