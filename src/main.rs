@@ -28,11 +28,8 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
-    env::set_var(
-        "CARGO_MANIFEST_DIR",
-        format!("{}/stubs", env::var("CARGO_MANIFEST_DIR").unwrap_or_default())
-    );
-    let stub_dir: Dir = include_dir!("$CARGO_MANIFEST_DIR");
+    // This here must be defined in the environment
+    let stub_dir: Dir = include_dir!("$PATH_TO_STUBS");
 
     println!("Creating project {}...", args[1]);
     create_project_assets(

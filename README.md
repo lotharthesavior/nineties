@@ -247,6 +247,27 @@ Your new seeders must implement the `Seeder` trait.
 
 ---
 
+## Nineties binary
+
+To build nineties binary, the following steps are necessary:
+
+**Step 1**:
+
+```bash
+source ./prepare-environment.sh
+```
+
+**Step 2**:
+
+```bash
+# to create a new project from here
+cargo run my_project
+# to prepare the binary
+cargon build --release
+```
+
+---
+
 ## Features
 
 - [x] MVC structure
