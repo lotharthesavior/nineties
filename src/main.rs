@@ -28,11 +28,11 @@ fn main() -> Result<(), Error> {
     }
     let destination = current_dir.join(&args[1]);
 
-    let stub_dir: Dir = include_dir!("stubs");
+    let stub_dir: Dir = include_dir!("$CARGO_MANIFEST_DIR");
 
     println!("Creating project {}...", args[1]);
     create_project_assets(
-        stub_dir,
+        stub_dir.get_dir("stubs").unwrap(),
         current_dir,
         PathBuf::from(destination)
     ).expect("Project creation failed");

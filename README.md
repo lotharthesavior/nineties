@@ -92,7 +92,7 @@ my-project/
 **Step 1**: Install the create:
 
 ```bash
-cargo install nineties
+cargo install cargo-watch nineties
 ```
 
 **Step 2**: Create a project with nineties:
