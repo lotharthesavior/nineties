@@ -2,6 +2,10 @@
 name = "nineties"
 version = "0.2.0"
 edition = "2021"
+authors = ["Savio Resende <savio@savioresende.com>"]
+description = "An app starter for traditional web apps."
+license = "MIT"
+repository = "https://github.com/lotharthesavior/nineties"
 
 [dependencies]
 actix-files = "0.6.6"
