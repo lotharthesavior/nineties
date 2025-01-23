@@ -1,4 +1,5 @@
-/target
-.idea
+dist/*
 .env
-/stubs/target
+node_modules
+.idea
+target

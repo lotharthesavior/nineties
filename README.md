@@ -1,109 +1,19 @@
 
 <h1 align="center">Nineties
-<img src="assets/nineties-logo.png" alt="Nineties - Web App" style="width: 44px; height: 44px;" width="44" height="44" /></h1>
+<img src="docs/imgs/nineties-logo.png" alt="Nineties - Web App" style="width: 44px; height: 44px;" width="44" height="44" /></h1>
 
-[![Build and Release](https://github.com/lotharthesavior/nineties/actions/workflows/release.yml/badge.svg)](https://github.com/lotharthesavior/nineties/actions/workflows/release.yml) [![Build and Test](https://github.com/lotharthesavior/nineties/actions/workflows/tests.yml/badge.svg)](https://github.com/lotharthesavior/nineties/actions/workflows/tests.yml)
+[![Build and Test](https://github.com/lotharthesavior/nineties/actions/workflows/tests.yml/badge.svg)](https://github.com/lotharthesavior/nineties/actions/workflows/tests.yml)
 
 This is a starter for web with rust on top of [Actix](https://actix.rs).
 
 Spend time with **your ideas** on top of a solid foundation.
 
-It creates an MVC structure with the following structure:
-
-```
-my-project/
-├── Cargo.lock
-├── Cargo.toml
-├── database
-├── diesel.toml
-├── dist
-├── migrations
-│   └── 2024-12-16-134059_create_users
-│       ├── down.sql
-│       └── up.sql
-├── package.json
-├── package-lock.json
-├── postcss.config.js
-├── src
-│   ├── console
-│   │   └── development.rs
-│   ├── database
-│   │   └── seeders
-│   │       ├── create_users.rs
-│   │       ├── mod.rs
-│   │       └── traits
-│   │           ├── mod.rs
-│   │           └── seeder.rs
-│   ├── helpers
-│   │   ├── database.rs
-│   │   ├── form.rs
-│   │   ├── general.rs
-│   │   ├── session.rs
-│   │   ├── template.rs
-│   │   └── test.rs
-│   ├── http
-│   │   ├── controllers
-│   │   │   ├── admin_controller.rs
-│   │   │   ├── auth_controller.rs
-│   │   │   └── home_controller.rs
-│   │   └── middlewares
-│   │       └── auth_middleware.rs
-│   ├── main.rs
-│   ├── models
-│   │   └── user.rs
-│   ├── resources
-│   │   ├── css
-│   │   │   └── styles.css
-│   │   ├── imgs
-│   │   │   └── nineties-logo.png
-│   │   ├── js
-│   │   │   └── script.js
-│   │   └── views
-│   │       ├── admin
-│   │       │   ├── index.html
-│   │       │   ├── pages
-│   │       │   │   ├── dashboard.html
-│   │       │   │   ├── profile.html
-│   │       │   │   └── settings.html
-│   │       │   ├── parts
-│   │       │   │   ├── side-menu.html
-│   │       │   │   └── top-menu.html
-│   │       │   └── signin-form.html
-│   │       ├── home.html
-│   │       ├── parts
-│   │       │   ├── components.html
-│   │       │   ├── footer.html
-│   │       │   ├── header.html
-│   │       │   ├── hero.html
-│   │       │   ├── html-head.html
-│   │       │   ├── notification.html
-│   │       │   └── open-graph.html
-│   │       └── signin.html
-│   ├── routes.rs
-│   ├── schema.rs
-│   └── services
-│       └── user_service.rs
-├── tailwind.config.js
-└── vite.config.js
-```
-
 ## Quick Start
 
-**Step 1**: Install the create:
+Just clone this repo start coding your web app:
 
 ```bash
-cargo install cargo-watch nineties
-```
-
-**Step 2**: Create a project with nineties:
-
-```bash
-nineties my_project
-```
-
-**Step 3**: Go inside your project, seed and and start develop
-
-```bash
+git clone https://github.com/lotharthesavior/nineties.git my_project
 cd my_project
 cargo run seed
 cargo run develop
@@ -291,6 +201,7 @@ cargon build --release
 
 ## Roadmap
 
+- [ ] Add registration page
 - [ ] WebSockets for realtime interactions
 - [ ] Wrap diesel rollback command, and add that to our `main.rs` entrypoint available commands
 
