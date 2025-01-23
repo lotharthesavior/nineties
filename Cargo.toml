@@ -1,6 +1,6 @@
 [package]
 name = "nineties"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Savio Resende <savio@savioresende.com>"]
 description = "An app starter for traditional web apps."
@@ -26,3 +26,5 @@ diesel_migrations = "2.2.0"
 
 [dev-dependencies]
 serial_test = "2.0"
+
+[package.metadata.cargo-install]
