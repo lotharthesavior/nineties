@@ -8,6 +8,15 @@ This is a starter for web with rust on top of [Actix](https://actix.rs).
 
 Spend time with **your ideas** on top of a solid foundation.
 
+## Dependencies
+
+At this point this is tested in Ubuntu, and it requires the following:
+
+- build-essential (available in apt)
+- libssl-dev (available in apt)
+- libsqlite3-dev (available in apt)
+- Run `cargo install cargo-watch`
+
 ## Quick Start
 
 Just clone this repo start coding your web app:
@@ -15,6 +24,7 @@ Just clone this repo start coding your web app:
 ```bash
 git clone https://github.com/lotharthesavior/nineties.git my_project
 cd my_project
+cargo run migrate
 cargo run seed
 cargo run develop
 ```
