@@ -129,7 +129,6 @@ pub async fn profile_password_post(
             .json(serde_json::json!({"errors": {"server_error": "Invalid credentials"}}));
     }
 
-    println!("new password: {}", new_password);
     let result = diesel::update(users.find(user.id))
         .set(password.eq(prepare_password(&*new_password)))
         .execute(&mut get_connection())
