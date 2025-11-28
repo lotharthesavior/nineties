@@ -43,7 +43,7 @@ pub fn get_session_message(session: &Session, is_json: bool) -> (String, String)
     if session_message["success"].is_string() && !session_message["success"].as_str().unwrap().is_empty() {
         session.remove("message");
 
-        return ("error".to_string(), session_message["error"].as_str().unwrap().to_string());
+        return ("success".to_string(), session_message["success"].as_str().unwrap().to_string());
     }
 
     session.remove("message");
