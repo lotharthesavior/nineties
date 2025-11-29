@@ -1,3 +1,4 @@
+use actix::Actor;
 use actix_web::{web, App, HttpServer};
 use actix_session::{SessionMiddleware, storage::CookieSessionStore};
 use dotenv::dotenv;
@@ -14,6 +15,7 @@ use tokio::io::{AsyncBufReadExt};
 use crate::database::seeders::create_users::{UserSeeder};
 use crate::database::seeders::traits::seeder::Seeder;
 use crate::helpers::database::get_connection;
+use crate::websocket::server::WsServer;
 
 mod routes;
 mod http {
@@ -61,6 +63,8 @@ mod helpers {
 mod services {
     pub mod user_service;
 }
+
+pub mod websocket;
 
 #[derive(Debug)]
 struct AppState {
@@ -114,6 +118,9 @@ async fn main() -> std::io::Result<()> {
                 .expect("SECRET_KEY must be set")
                 .as_bytes());
 
+            // Start WebSocket server actor
+            let ws_server = WsServer::new().start();
+
             HttpServer::new(move || {
                 App::new()
                     .wrap(SessionMiddleware::new(
@@ -125,6 +132,7 @@ async fn main() -> std::io::Result<()> {
                         app_name: Mutex::from(env::var("APP_NAME").unwrap_or_else(|_| "".to_string())),
                         user_id: Mutex::from(None),
                     }))
+                    .app_data(web::Data::new(ws_server.clone()))
                     .configure(routes::config)
             })
                 .bind((app_url, app_port))?

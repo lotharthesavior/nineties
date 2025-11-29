@@ -3,6 +3,7 @@ use actix_files as fs;
 use actix_session::SessionExt;
 use crate::http::controllers::{admin_controller, home_controller, auth_controller};
 use crate::http::middlewares::auth_middleware::AuthMiddleware;
+use crate::websocket;
 
 #[get("/public/{filename:.*}")]
 pub async fn static_file(req: HttpRequest) -> Result<fs::NamedFile, Error> {
@@ -32,6 +33,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                 .service(admin_controller::profile_post)
                 .service(admin_controller::profile_password_post)
         )
+        // WebSocket endpoint
+        .route("/ws", web::get().to(websocket::connection::ws_handler))
         .service(static_file);
 }
 

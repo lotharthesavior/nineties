@@ -52,7 +52,7 @@ pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
             "success": ""
         })).unwrap();
 
-        return HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+        return HttpResponse::SeeOther().insert_header(("Location", "/signin")).finish()
     }
 
     let email_param: String = get_from_form_body("email".to_string(), req_body.clone());
@@ -64,7 +64,7 @@ pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
             "success": ""
         })).unwrap();
 
-        return HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+        return HttpResponse::SeeOther().insert_header(("Location", "/signin")).finish()
     }
 
     match validate_user_credentials(&email_param, &password_param) {
@@ -74,7 +74,7 @@ pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
                 "success": ""
             })).unwrap();
 
-            HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+            HttpResponse::SeeOther().insert_header(("Location", "/signin")).finish()
         },
         UserValidationResult::InvalidPasswordHash => {
             println!("Invalid credentials: Couldn't parse password hash");
@@ -83,7 +83,7 @@ pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
                 "success": ""
             })).unwrap();
 
-            HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+            HttpResponse::SeeOther().insert_header(("Location", "/signin")).finish()
         },
         UserValidationResult::Invalid => {
             session.insert("message", serde_json::json!({
@@ -91,7 +91,7 @@ pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
                 "success": ""
             })).unwrap();
 
-            HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+            HttpResponse::SeeOther().insert_header(("Location", "/signin")).finish()
         },
         UserValidationResult::Valid => {
             let user_results = users
@@ -103,7 +103,7 @@ pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
 
             session.insert("user_id", user.id).unwrap();
 
-            HttpResponse::Found().insert_header(("Location", "/admin")).finish()
+            HttpResponse::SeeOther().insert_header(("Location", "/admin")).finish()
         }
     }
 }
@@ -222,7 +222,7 @@ mod tests {
             ])
             .to_request();
         let resp2 = test::call_service(&app, req2).await;
-        assert_eq!(resp2.status(), http::StatusCode::FOUND);
+        assert_eq!(resp2.status(), http::StatusCode::SEE_OTHER);
 
         // Let's get the cookie from the last request here and repeat it!
         let headers = resp2.headers().clone();

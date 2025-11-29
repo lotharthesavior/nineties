@@ -2,34 +2,19 @@
 
 {% include "parts/html-head.html" %}
 
-<body class="h-full bg-white dark:bg-gray-900">
+<body class="h-full bg-white dark:bg-gray-900" data-controller="notification mobile-menu dark-mode dropdown websocket">
 
-<div x-data="{
-            offCanvasOpen: false,
-            menuShow: false,
-            darkMode: localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches),
-            isActive(path) {
-                return window.location.pathname === path;
-            },
-            toggleDarkMode() {
-                this.darkMode = !this.darkMode;
-                localStorage.setItem('darkMode', this.darkMode);
-                document.documentElement.classList.toggle('dark', this.darkMode);
-            }
-        }">
+{% include "admin/parts/side-menu.html" %}
 
-    {% include "admin/parts/side-menu.html" %}
+<div class="lg:pl-72">
+    {% include "parts/notification.html" %}
+    {% include "admin/parts/top-menu.html" %}
 
-    <div class="lg:pl-72">
-        {% include "parts/notification.html" %}
-        {% include "admin/parts/top-menu.html" %}
-
-        <main class="py-10 bg-white dark:bg-gray-900 min-h-screen">
-            <div class="px-4 sm:px-6 lg:px-8 text-gray-900 dark:text-white">
-                {% block content %}{% endblock content %}
-            </div>
-        </main>
-    </div>
+    <main class="py-10 bg-white dark:bg-gray-900 min-h-screen">
+        <div class="px-4 sm:px-6 lg:px-8 text-gray-900 dark:text-white">
+            {% block content %}{% endblock content %}
+        </div>
+    </main>
 </div>
 
 </body>

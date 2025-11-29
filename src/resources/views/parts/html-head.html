@@ -9,11 +9,14 @@
     <link rel="icon" href="/public/imgs/nineties-logo.png" type="image/png">
     <link rel="apple-touch-icon" href="/public/imgs/nineties-logo.png">
 
+    <!-- Turbo configuration -->
+    <meta name="turbo-cache-control" content="no-preview">
+
     <!-- Dark mode initialization (prevents flash) -->
     <script>
         (function() {
-            const stored = localStorage.getItem('darkMode');
-            if (stored === 'true' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            const stored = localStorage.getItem('theme');
+            if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             }
         })();
