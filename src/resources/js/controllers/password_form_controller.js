@@ -10,14 +10,6 @@ export default class extends Controller {
         waiting: { type: Boolean, default: false },
     };
 
-    connect() {
-        this.element.addEventListener("submit", this.handleSubmit.bind(this));
-    }
-
-    disconnect() {
-        this.element.removeEventListener("submit", this.handleSubmit.bind(this));
-    }
-
     /**
      * Handle form submission
      * @param {Event} event
@@ -30,11 +22,15 @@ export default class extends Controller {
         this.disableSubmitButton();
 
         const formData = new FormData(this.element);
+        const urlEncodedData = new URLSearchParams(formData).toString();
 
         try {
             const response = await fetch(this.element.action, {
                 method: "POST",
-                body: formData,
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: urlEncodedData,
             });
 
             const data = await response.json();
