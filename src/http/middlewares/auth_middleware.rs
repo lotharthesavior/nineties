@@ -1,12 +1,9 @@
-use std::future::{ready, IntoFuture, Ready};
+use std::future::{ready, Ready};
 use actix_session::SessionExt;
-use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, web, Error, HttpResponse};
+use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, Error, HttpResponse};
 use actix_web::body::EitherBody;
-use diesel::{QueryDsl, RunQueryDsl};
 use futures_util::future::LocalBoxFuture;
-use crate::helpers::database::get_connection;
-use crate::models::user::User;
-use crate::schema::users::dsl::users;
+use crate::helpers::session::is_authenticated;
 
 pub struct AuthMiddleware;
 
@@ -45,21 +42,17 @@ where
 
     fn call(&self, req: ServiceRequest) -> Self::Future {
         let session = req.get_session();
-        let user_id: i32 = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
-        let user = users.find(user_id).first::<User>(&mut get_connection());
 
-        match user {
-            Ok(user) => {},
-            Err(e) => {
-                return Box::pin(async move {
-                    Ok(req.into_response(
-                        HttpResponse::Found()
-                            .insert_header(("Location", "/signin"))
-                            .finish()
-                            .map_into_right_body()
-                    ))
-                });
-            }
+        // Use cached session check (no DB query if user_data exists in session)
+        if !is_authenticated(&session) {
+            return Box::pin(async move {
+                Ok(req.into_response(
+                    HttpResponse::Found()
+                        .insert_header(("Location", "/signin"))
+                        .finish()
+                        .map_into_right_body()
+                ))
+            });
         }
 
         let res: <S as Service<ServiceRequest>>::Future = self.service.call(req);

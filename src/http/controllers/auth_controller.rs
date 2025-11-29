@@ -5,7 +5,7 @@ use crate::{AppState};
 use crate::helpers::csrf::{get_csrf_token, validate_and_regenerate_csrf_token};
 use crate::helpers::database::get_connection;
 use crate::helpers::form::get_from_form_body;
-use crate::helpers::session::{get_session_message, is_authenticated};
+use crate::helpers::session::{clear_session_user, get_session_message, is_authenticated, set_session_user};
 use crate::helpers::template::load_template;
 use crate::models::user::User;
 use crate::schema::users::dsl::*;
@@ -35,7 +35,7 @@ pub async fn signin(data: web::Data<AppState>, session: Session) -> impl Respond
 
 #[get("/signout")]
 pub async fn signout(session: Session) -> impl Responder {
-    session.remove("user_id");
+    clear_session_user(&session);
     session.insert("message", "You have been signed out").unwrap();
 
     HttpResponse::Found().insert_header(("Location", "/")).finish()
@@ -101,7 +101,8 @@ pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
 
             let user = user_results.first().unwrap();
 
-            session.insert("user_id", user.id).unwrap();
+            // Cache user data in session to avoid DB queries on subsequent requests
+            set_session_user(&session, user);
 
             HttpResponse::SeeOther().insert_header(("Location", "/admin")).finish()
         }

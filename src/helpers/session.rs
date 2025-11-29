@@ -4,11 +4,28 @@ use crate::helpers::database::get_connection;
 use crate::models::user::User;
 use crate::schema::users::dsl::users;
 
+/// Check if user is authenticated by looking for cached user data in session.
+/// Falls back to database query only if user_data is missing but user_id exists.
 pub fn is_authenticated(session: &Session) -> bool {
-    let user_id: i32 = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
-    let user: Result<User, diesel::result::Error> = users.find(user_id).first::<User>(&mut get_connection());
+    // First check if we have cached user data
+    if let Ok(Some(_user)) = session.get::<User>("user_data") {
+        return true;
+    }
 
-    user.is_ok()
+    // Fallback: check user_id and query DB (for backwards compatibility)
+    let user_id: i32 = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
+    if user_id == 0 {
+        return false;
+    }
+
+    let user: Result<User, diesel::result::Error> = users.find(user_id).first::<User>(&mut get_connection());
+    if let Ok(user) = user {
+        // Cache the user data for future requests
+        let _ = session.insert("user_data", user);
+        true
+    } else {
+        false
+    }
 }
 
 pub fn get_session_message(session: &Session, is_json: bool) -> (String, String) {
@@ -51,13 +68,37 @@ pub fn get_session_message(session: &Session, is_json: bool) -> (String, String)
     ("success".to_string(), "".to_string())
 }
 
+/// Get user from session cache. Falls back to database query only if needed.
 pub fn get_session_user(session: &Session) -> Option<User> {
-    let user_id: i32 = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
-    let user: Result<User, diesel::result::Error> = users.find(user_id).first::<User>(&mut get_connection());
+    // First check if we have cached user data
+    if let Ok(Some(user)) = session.get::<User>("user_data") {
+        return Some(user);
+    }
 
-    if user.is_ok() {
-        Some(user.unwrap())
+    // Fallback: query database and cache result
+    let user_id: i32 = session.get::<i32>("user_id").unwrap_or(Some(0)).unwrap_or(0);
+    if user_id == 0 {
+        return None;
+    }
+
+    let user: Result<User, diesel::result::Error> = users.find(user_id).first::<User>(&mut get_connection());
+    if let Ok(user) = user {
+        // Cache for future requests
+        let _ = session.insert("user_data", user.clone());
+        Some(user)
     } else {
         None
     }
+}
+
+/// Store user data in session (call this after successful login)
+pub fn set_session_user(session: &Session, user: &User) {
+    let _ = session.insert("user_id", user.id);
+    let _ = session.insert("user_data", user.clone());
+}
+
+/// Clear user data from session (call this on logout)
+pub fn clear_session_user(session: &Session) {
+    session.remove("user_id");
+    session.remove("user_data");
 }

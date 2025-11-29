@@ -1,17 +1,17 @@
-use std::error::Error as ErrorTrait;
-use diesel::internal::derives::multiconnection::SelectStatementAccessor;
 use diesel::prelude::*;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations};
+use serde::{Deserialize, Serialize};
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
-#[derive(Queryable, Selectable, Debug)]
+#[derive(Queryable, Selectable, Debug, Clone, Serialize, Deserialize)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct User {
     pub id: i32,
     pub name: String,
     pub email: String,
+    #[serde(skip_serializing)]
     pub password: String,
     pub created_at: Option<String>,
     pub updated_at: Option<String>,
