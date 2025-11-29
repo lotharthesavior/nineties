@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-white">
+<html lang="en" class="h-full bg-white dark:bg-gray-900">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,16 @@
     <link rel="icon" href="/public/imgs/nineties-logo.png" sizes="any">
     <link rel="icon" href="/public/imgs/nineties-logo.png" type="image/png">
     <link rel="apple-touch-icon" href="/public/imgs/nineties-logo.png">
+
+    <!-- Dark mode initialization (prevents flash) -->
+    <script>
+        (function() {
+            const stored = localStorage.getItem('darkMode');
+            if (stored === 'true' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
 
     <!-- PWA Manifest -->
     <!--<link rel="manifest" href="/manifest.json">-->

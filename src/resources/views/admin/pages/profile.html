@@ -2,21 +2,21 @@
 
 {% block content %}
 <div class="space-y-12" x-data="profileform">
-    <div class="border-b border-gray-900/10 pb-12">
-        <h2 class="text-base/7 font-semibold text-gray-900">Profile</h2>
-        <p class="mt-1 text-sm/6 text-gray-600">This information will be displayed publicly so be careful what you share.</p>
+    <div class="border-b border-gray-900/10 dark:border-gray-700 pb-12">
+        <h2 class="text-base/7 font-semibold text-gray-900 dark:text-white">Profile</h2>
+        <p class="mt-1 text-sm/6 text-gray-600 dark:text-gray-400">This information will be displayed publicly so be careful what you share.</p>
 
         <form id="profile-form" hx-post="/admin/profile" hx-swap="none" hx-indicator="#profile-indicator">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                 <div class="sm:col-span-4">
-                    <label for="name" class="block text-sm/6 font-medium text-gray-900">Name</label>
+                    <label for="name" class="block text-sm/6 font-medium text-gray-900 dark:text-white">Name</label>
                     <div class="mt-2">
                         <input
                             type="text"
                             name="name"
                             id="name"
-                            class="block w-full max-w-96 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6 invalid:outline-red-600"
+                            class="block w-full max-w-96 rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-base text-gray-900 dark:text-white outline outline-1 -outline-offset-1 outline-gray-300 dark:outline-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 dark:focus:outline-blue-500 sm:text-sm/6 invalid:outline-red-600"
                             placeholder="Jekyll Hyde"
                             x-model="user_name"
                             required
@@ -27,13 +27,13 @@
                 </div>
 
                 <div class="sm:col-span-4">
-                    <label for="email" class="block text-sm/6 font-medium text-gray-900">Email</label>
+                    <label for="email" class="block text-sm/6 font-medium text-gray-900 dark:text-white">Email</label>
                     <div class="mt-2">
                         <input
                             type="email"
                             name="email"
                             id="email"
-                            class="block w-full max-w-96 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6 invalid:outline-red-600"
+                            class="block w-full max-w-96 rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-base text-gray-900 dark:text-white outline outline-1 -outline-offset-1 outline-gray-300 dark:outline-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 dark:focus:outline-blue-500 sm:text-sm/6 invalid:outline-red-600"
                             placeholder="you@example.com"
                             x-model="user_email"
                             required
@@ -45,27 +45,27 @@
             </div>
 
             <div class="pt-12 flex gap-2">
-                <button :disabled="waitingProfileSubmission" type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Save</button>
+                <button :disabled="waitingProfileSubmission" type="submit" class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50">Save</button>
                 {{ components::indicator(label="profile-indicator") }}
             </div>
         </form>
     </div>
 
     <div class="pb-12">
-        <h2 class="text-base/7 font-semibold text-gray-900">Password</h2>
+        <h2 class="text-base/7 font-semibold text-gray-900 dark:text-white">Password</h2>
 
         <form id="password-form" hx-post="/admin/profile-password" hx-swap="none" hx-indicator="#password-indicator">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="current_email" x-model="current_email">
             <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                 <div class="sm:col-span-4">
-                    <label for="old_password" class="block text-sm/6 font-medium text-gray-900">Old Password</label>
+                    <label for="old_password" class="block text-sm/6 font-medium text-gray-900 dark:text-white">Old Password</label>
                     <div class="mt-2">
                         <input
                             type="password"
                             name="old_password"
                             id="old_password"
-                            class="block w-full max-w-96 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6"
+                            class="block w-full max-w-96 rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-base text-gray-900 dark:text-white outline outline-1 -outline-offset-1 outline-gray-300 dark:outline-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 dark:focus:outline-blue-500 sm:text-sm/6"
                             x-model="old_password"
                             required
                             minlength="5"
@@ -75,13 +75,13 @@
                 </div>
 
                 <div class="sm:col-span-4">
-                    <label for="new_password" class="block text-sm/6 font-medium text-gray-900">New Password</label>
+                    <label for="new_password" class="block text-sm/6 font-medium text-gray-900 dark:text-white">New Password</label>
                     <div class="mt-2">
                         <input
                             type="password"
                             name="new_password"
                             id="new_password"
-                            class="block w-full max-w-96 rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 sm:text-sm/6"
+                            class="block w-full max-w-96 rounded-md bg-white dark:bg-gray-800 px-3 py-1.5 text-base text-gray-900 dark:text-white outline outline-1 -outline-offset-1 outline-gray-300 dark:outline-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline focus:outline-2 focus:-outline-offset-2 focus:outline-blue-600 dark:focus:outline-blue-500 sm:text-sm/6"
                             x-model="new_password"
                             required
                             minlength="5"
