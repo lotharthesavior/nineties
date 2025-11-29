@@ -1,12 +1,13 @@
-use actix_session::{Session, SessionExt};
-use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder, ResponseError};
+use actix_session::Session;
+use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use serde::{Deserialize, Serialize};
-use crate::{AppState};
+use crate::AppState;
+use crate::helpers::csrf::{get_csrf_token, validate_csrf_token};
 use crate::helpers::database::get_connection;
 use crate::helpers::session::get_session_user;
 use crate::helpers::template::load_template;
-use crate::models::user::{User};
+use crate::models::user::User;
 use crate::schema::users::dsl::users;
 use crate::schema::users::{email, name, password};
 use crate::services::user_service::{prepare_password, validate_user_credentials, UserValidationResult};
@@ -47,13 +48,15 @@ pub async fn profile(_req: HttpRequest, data: web::Data<AppState>, session: Sess
     let app_name = &data.app_name.lock().unwrap();
     let user_name: String = user.name;
     let user_email: String = user.email;
+    let csrf_token = get_csrf_token(&session);
 
     HttpResponse::Ok().body(load_template(
         "admin/pages/profile.html",
         vec![
             ("name", app_name),
             ("user_name", &user_name),
-            ("user_email", &user_email)
+            ("user_email", &user_email),
+            ("csrf_token", &csrf_token)
         ],
         None
     ))
@@ -61,31 +64,43 @@ pub async fn profile(_req: HttpRequest, data: web::Data<AppState>, session: Sess
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserForm {
+    csrf_token: String,
     name: String,
     email: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PasswordForm {
+    csrf_token: String,
     current_email: String,
     old_password: String,
     new_password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct UserResponseData {
+    name: String,
+    email: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ProfileResponse {
-    data: UserForm,
+    data: UserResponseData,
 }
 
 #[post("/profile")]
 pub async fn profile_post(
     form: web::Form<UserForm>,
-    data: web::Data<AppState>,
     session: Session
 ) -> impl Responder {
+    // Validate CSRF token
+    if !validate_csrf_token(&session, &form.csrf_token) {
+        return HttpResponse::Forbidden()
+            .json(serde_json::json!({"errors": {"csrf": "Invalid request. Please refresh and try again."}}));
+    }
+
     let user: User = get_session_user(&session).unwrap();
 
-    let app_name = &data.app_name.lock().unwrap();
     let user_name: String = form.name.clone();
     let user_email: String = form.email.clone();
 
@@ -100,7 +115,7 @@ pub async fn profile_post(
     }
 
     let obj = ProfileResponse {
-        data: UserForm {
+        data: UserResponseData {
             name: user_name.to_string(),
             email: user_email.to_string(),
         },
@@ -112,12 +127,16 @@ pub async fn profile_post(
 #[post("/profile-password")]
 pub async fn profile_password_post(
     form: web::Form<PasswordForm>,
-    data: web::Data<AppState>,
     session: Session
 ) -> impl Responder {
+    // Validate CSRF token
+    if !validate_csrf_token(&session, &form.csrf_token) {
+        return HttpResponse::Forbidden()
+            .json(serde_json::json!({"errors": {"csrf": "Invalid request. Please refresh and try again."}}));
+    }
+
     let user: User = get_session_user(&session).unwrap();
 
-    let app_name = &data.app_name.lock().unwrap();
     let current_email: String = form.current_email.clone();
     let old_password: String = form.old_password.clone();
     let new_password: String = form.new_password.clone();
@@ -179,6 +198,18 @@ mod tests {
         UserSeeder::execute(&mut conn).expect("Failed to seed users table");
     }
 
+    /// Helper to extract CSRF token from HTML response body
+    fn extract_csrf_token(body_str: &str) -> String {
+        body_str
+            .split("name=\"csrf_token\" value=\"")
+            .nth(1)
+            .unwrap()
+            .split("\"")
+            .next()
+            .unwrap()
+            .to_string()
+    }
+
     #[serial]
     #[actix_web::test]
     async fn test_dashboard() {
@@ -200,6 +231,7 @@ mod tests {
                     CookieSessionStore::default(),
                     secret_key.clone(),
                 ))
+                .service(auth_controller::signin)
                 .service(auth_controller::signin_post)
                 .service(
                     web::scope("/admin")
@@ -209,24 +241,37 @@ mod tests {
                 )
         ).await;
 
+        // Test that unauthenticated access redirects
         let req1 = test::TestRequest::get()
             .uri("/admin")
             .to_request();
         let resp1 = test::call_service(&app, req1).await;
         assert_eq!(resp1.status(), http::StatusCode::FOUND);
 
-        let req2 = test::TestRequest::post()
+        // Get signin page to obtain CSRF token
+        let req_signin = test::TestRequest::get()
             .uri("/signin")
-            .set_form(&[("email", "jekyll@example.com"), ("password", "password")])
             .to_request();
-        let resp2 = test::call_service(&app, req2).await;
-        assert_eq!(resp2.status(), http::StatusCode::FOUND);
+        let resp_signin = test::call_service(&app, req_signin).await;
+        let headers_signin = resp_signin.headers().clone();
+        let cookie_header_signin = headers_signin.get("set-cookie").unwrap().to_str().unwrap();
+        let session_cookie = Cookie::parse_encoded(cookie_header_signin).unwrap().into_owned();
+        let body = test::read_body(resp_signin).await;
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        let csrf_token = extract_csrf_token(&body_str);
 
-        // Let's get the cookie from the last request here and repeat it!
-        let headers = resp2.headers().clone();
+        // Login with CSRF token
+        let req_login = test::TestRequest::post()
+            .uri("/signin")
+            .cookie(session_cookie.clone())
+            .set_form(&[("csrf_token", csrf_token.as_str()), ("email", "jekyll@example.com"), ("password", "password")])
+            .to_request();
+        let resp_login = test::call_service(&app, req_login).await;
+        let headers = resp_login.headers().clone();
         let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
-        let parsed_cookie = Cookie::parse_encoded(cookie_header).unwrap();
+        let parsed_cookie = Cookie::parse_encoded(cookie_header).unwrap().into_owned();
 
+        // Now access dashboard with session
         let req3 = test::TestRequest::get()
             .cookie(parsed_cookie)
             .uri("/admin")
@@ -256,6 +301,7 @@ mod tests {
                     CookieSessionStore::default(),
                     secret_key.clone(),
                 ))
+                .service(auth_controller::signin)
                 .service(auth_controller::signin_post)
                 .service(
                     web::scope("/admin")
@@ -265,27 +311,40 @@ mod tests {
                 )
         ).await;
 
+        // Test that unauthenticated access redirects
         let req1 = test::TestRequest::get()
-            .uri("/admin")
+            .uri("/admin/settings")
             .to_request();
         let resp1 = test::call_service(&app, req1).await;
         assert_eq!(resp1.status(), http::StatusCode::FOUND);
 
-        let req2 = test::TestRequest::post()
+        // Get signin page to obtain CSRF token
+        let req_signin = test::TestRequest::get()
             .uri("/signin")
-            .set_form(&[("email", "jekyll@example.com"), ("password", "password")])
             .to_request();
-        let resp2 = test::call_service(&app, req2).await;
-        assert_eq!(resp2.status(), http::StatusCode::FOUND);
+        let resp_signin = test::call_service(&app, req_signin).await;
+        let headers_signin = resp_signin.headers().clone();
+        let cookie_header_signin = headers_signin.get("set-cookie").unwrap().to_str().unwrap();
+        let session_cookie = Cookie::parse_encoded(cookie_header_signin).unwrap().into_owned();
+        let body = test::read_body(resp_signin).await;
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        let csrf_token = extract_csrf_token(&body_str);
 
-        // Let's get the cookie from the last request here and repeat it!
-        let headers = resp2.headers().clone();
+        // Login with CSRF token
+        let req_login = test::TestRequest::post()
+            .uri("/signin")
+            .cookie(session_cookie.clone())
+            .set_form(&[("csrf_token", csrf_token.as_str()), ("email", "jekyll@example.com"), ("password", "password")])
+            .to_request();
+        let resp_login = test::call_service(&app, req_login).await;
+        let headers = resp_login.headers().clone();
         let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
-        let parsed_cookie = Cookie::parse_encoded(cookie_header).unwrap();
+        let parsed_cookie = Cookie::parse_encoded(cookie_header).unwrap().into_owned();
 
+        // Now access settings with session
         let req3 = test::TestRequest::get()
             .cookie(parsed_cookie)
-            .uri("/admin")
+            .uri("/admin/settings")
             .to_request();
         let resp3 = test::call_service(&app, req3).await;
         assert_eq!(resp3.status(), http::StatusCode::OK);
@@ -312,6 +371,7 @@ mod tests {
                     CookieSessionStore::default(),
                     secret_key.clone(),
                 ))
+                .service(auth_controller::signin)
                 .service(auth_controller::signin_post)
                 .service(
                     web::scope("/admin")
@@ -321,18 +381,30 @@ mod tests {
                 )
         ).await;
 
-        let req1 = test::TestRequest::post()
+        // Get signin page to obtain CSRF token
+        let req_signin = test::TestRequest::get()
             .uri("/signin")
-            .set_form(&[("email", "jekyll@example.com"), ("password", "password")])
             .to_request();
-        let resp1 = test::call_service(&app, req1).await;
-        assert_eq!(resp1.status(), http::StatusCode::FOUND);
+        let resp_signin = test::call_service(&app, req_signin).await;
+        let headers_signin = resp_signin.headers().clone();
+        let cookie_header_signin = headers_signin.get("set-cookie").unwrap().to_str().unwrap();
+        let session_cookie = Cookie::parse_encoded(cookie_header_signin).unwrap().into_owned();
+        let body = test::read_body(resp_signin).await;
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        let csrf_token = extract_csrf_token(&body_str);
 
-        // Let's get the cookie from the last request here and repeat it!
-        let headers = resp1.headers().clone();
+        // Login with CSRF token
+        let req_login = test::TestRequest::post()
+            .uri("/signin")
+            .cookie(session_cookie.clone())
+            .set_form(&[("csrf_token", csrf_token.as_str()), ("email", "jekyll@example.com"), ("password", "password")])
+            .to_request();
+        let resp_login = test::call_service(&app, req_login).await;
+        let headers = resp_login.headers().clone();
         let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
-        let parsed_cookie = Cookie::parse_encoded(cookie_header).unwrap();
+        let parsed_cookie = Cookie::parse_encoded(cookie_header).unwrap().into_owned();
 
+        // Get profile page to obtain CSRF token
         let req3 = test::TestRequest::get()
             .cookie(parsed_cookie.clone())
             .uri("/admin/profile")
@@ -340,12 +412,24 @@ mod tests {
         let resp3 = test::call_service(&app, req3).await;
         assert_eq!(resp3.status(), http::StatusCode::OK);
 
+        // Extract CSRF token from profile page
+        let body = test::read_body(resp3).await;
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        let csrf_token = body_str
+            .split("name=\"csrf_token\" value=\"")
+            .nth(1)
+            .unwrap()
+            .split("\"")
+            .next()
+            .unwrap();
+
         let new_email = "hyde@example.com";
 
+        // Submit profile update with CSRF token
         let req4 = test::TestRequest::post()
             .cookie(parsed_cookie)
             .uri("/admin/profile")
-            .set_form(&[("name", "Hyde"), ("email", new_email)])
+            .set_form(&[("csrf_token", csrf_token), ("name", "Hyde"), ("email", new_email)])
             .to_request();
         let resp4 = test::call_service(&app, req4).await;
         assert_eq!(resp4.status(), http::StatusCode::OK);
@@ -381,6 +465,7 @@ mod tests {
                     CookieSessionStore::default(),
                     secret_key.clone(),
                 ))
+                .service(auth_controller::signin)
                 .service(auth_controller::signin_post)
                 .service(
                     web::scope("/admin")
@@ -390,21 +475,30 @@ mod tests {
                 )
         ).await;
 
-        let req1 = test::TestRequest::post()
+        // Get signin page to obtain CSRF token
+        let req_signin = test::TestRequest::get()
             .uri("/signin")
-            .set_form(&[
-                ("email", user_email),
-                ("password", "password"),
-            ])
             .to_request();
-        let resp1 = test::call_service(&app, req1).await;
-        assert_eq!(resp1.status(), http::StatusCode::FOUND);
+        let resp_signin = test::call_service(&app, req_signin).await;
+        let headers_signin = resp_signin.headers().clone();
+        let cookie_header_signin = headers_signin.get("set-cookie").unwrap().to_str().unwrap();
+        let session_cookie = Cookie::parse_encoded(cookie_header_signin).unwrap().into_owned();
+        let body = test::read_body(resp_signin).await;
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        let csrf_token = extract_csrf_token(&body_str);
 
-        // Let's get the cookie from the last request here and repeat it!
-        let headers = resp1.headers().clone();
+        // Login with CSRF token
+        let req_login = test::TestRequest::post()
+            .uri("/signin")
+            .cookie(session_cookie.clone())
+            .set_form(&[("csrf_token", csrf_token.as_str()), ("email", "jekyll@example.com"), ("password", "password")])
+            .to_request();
+        let resp_login = test::call_service(&app, req_login).await;
+        let headers = resp_login.headers().clone();
         let cookie_header = headers.get("set-cookie").unwrap().to_str().unwrap();
-        let parsed_cookie = Cookie::parse_encoded(cookie_header).unwrap();
+        let parsed_cookie = Cookie::parse_encoded(cookie_header).unwrap().into_owned();
 
+        // Get profile page to obtain CSRF token
         let req3 = test::TestRequest::get()
             .cookie(parsed_cookie.clone())
             .uri("/admin/profile")
@@ -412,10 +506,23 @@ mod tests {
         let resp3 = test::call_service(&app, req3).await;
         assert_eq!(resp3.status(), http::StatusCode::OK);
 
+        // Extract CSRF token from profile page
+        let body = test::read_body(resp3).await;
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        let csrf_token = body_str
+            .split("name=\"csrf_token\" value=\"")
+            .nth(1)
+            .unwrap()
+            .split("\"")
+            .next()
+            .unwrap();
+
+        // Submit password change with CSRF token
         let req4 = test::TestRequest::post()
             .cookie(parsed_cookie)
             .uri("/admin/profile-password")
             .set_form(&[
+                ("csrf_token", csrf_token),
                 ("current_email", user_email),
                 ("old_password", "password"),
                 ("new_password", "new-password"),

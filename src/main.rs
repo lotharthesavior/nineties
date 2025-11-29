@@ -55,6 +55,7 @@ mod helpers {
     pub mod general;
     pub mod template;
     pub mod test;
+    pub mod csrf;
 }
 
 mod services {

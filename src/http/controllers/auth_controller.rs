@@ -1,14 +1,13 @@
-use std::error::Error;
 use actix_session::Session;
 use actix_web::{get, post, web, HttpResponse, Responder};
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use diesel::{QueryDsl, ExpressionMethods, RunQueryDsl, SqliteConnection};
+use diesel::{QueryDsl, ExpressionMethods, RunQueryDsl};
 use crate::{AppState};
+use crate::helpers::csrf::{get_csrf_token, validate_and_regenerate_csrf_token};
 use crate::helpers::database::get_connection;
 use crate::helpers::form::get_from_form_body;
 use crate::helpers::session::{get_session_message, is_authenticated};
 use crate::helpers::template::load_template;
-use crate::models::user::{User};
+use crate::models::user::User;
 use crate::schema::users::dsl::*;
 use crate::services::user_service::{validate_user_credentials, UserValidationResult};
 
@@ -21,12 +20,14 @@ pub async fn signin(data: web::Data<AppState>, session: Session) -> impl Respond
     }
 
     let session_message: (String, String) = get_session_message(&session, true);
+    let csrf_token = get_csrf_token(&session);
 
     HttpResponse::Ok().body(load_template(
         "signin.html",
         vec![
             ("name", app_name),
-            ("session_message", &*session_message.1)
+            ("session_message", &*session_message.1),
+            ("csrf_token", &csrf_token)
         ],
         None
     ))
@@ -42,6 +43,18 @@ pub async fn signout(session: Session) -> impl Responder {
 
 #[post("/signin")]
 pub async fn signin_post(req_body: String, session: Session) -> impl Responder {
+    let csrf_token_param: String = get_from_form_body("csrf_token".to_string(), req_body.clone());
+
+    // Validate CSRF token
+    if !validate_and_regenerate_csrf_token(&session, &csrf_token_param) {
+        session.insert("message", serde_json::json!({
+            "error": "Invalid request. Please try again.",
+            "success": ""
+        })).unwrap();
+
+        return HttpResponse::Found().insert_header(("Location", "/signin")).finish()
+    }
+
     let email_param: String = get_from_form_body("email".to_string(), req_body.clone());
     let password_param: String = get_from_form_body("password".to_string(), req_body);
 
@@ -175,15 +188,38 @@ mod tests {
                 )
         ).await;
 
+        // First, get the signin page to obtain CSRF token and session cookie
         let req1 = test::TestRequest::get()
             .uri("/signin")
             .to_request();
         let resp1 = test::call_service(&app, req1).await;
         assert_eq!(resp1.status(), http::StatusCode::OK);
 
+        // Get session cookie from GET /signin
+        let headers1 = resp1.headers().clone();
+        let cookie_header1 = headers1.get("set-cookie").unwrap().to_str().unwrap();
+        let session_cookie = Cookie::parse_encoded(cookie_header1).unwrap();
+
+        // Extract CSRF token from response body
+        let body = test::read_body(resp1).await;
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        let csrf_token = body_str
+            .split("name=\"csrf_token\" value=\"")
+            .nth(1)
+            .unwrap()
+            .split("\"")
+            .next()
+            .unwrap();
+
+        // Now submit login with CSRF token and session cookie
         let req2 = test::TestRequest::post()
             .uri("/signin")
-            .set_form(&[("email", "jekyll@example.com"), ("password", "password")])
+            .cookie(session_cookie.clone())
+            .set_form(&[
+                ("csrf_token", csrf_token),
+                ("email", "jekyll@example.com"),
+                ("password", "password")
+            ])
             .to_request();
         let resp2 = test::call_service(&app, req2).await;
         assert_eq!(resp2.status(), http::StatusCode::FOUND);

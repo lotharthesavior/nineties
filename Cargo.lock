@@ -1484,6 +1484,7 @@ dependencies = [
  "fs_extra",
  "futures",
  "futures-util",
+ "rand",
  "serde",
  "serde_json",
  "serial_test",

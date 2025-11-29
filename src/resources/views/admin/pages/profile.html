@@ -7,6 +7,7 @@
         <p class="mt-1 text-sm/6 text-gray-600">This information will be displayed publicly so be careful what you share.</p>
 
         <form id="profile-form" hx-post="/admin/profile" hx-swap="none" hx-indicator="#profile-indicator">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                 <div class="sm:col-span-4">
                     <label for="name" class="block text-sm/6 font-medium text-gray-900">Name</label>
@@ -54,6 +55,7 @@
         <h2 class="text-base/7 font-semibold text-gray-900">Password</h2>
 
         <form id="password-form" hx-post="/admin/profile-password" hx-swap="none" hx-indicator="#password-indicator">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="current_email" x-model="current_email">
             <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                 <div class="sm:col-span-4">
