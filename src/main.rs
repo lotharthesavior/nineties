@@ -1,15 +1,3 @@
-use crate::database::seeders::create_users::UserSeeder;
-use crate::database::seeders::traits::seeder::Seeder;
-use crate::helpers::database::get_connection;
-use crate::websocket::server::WsServer;
-use actix::Actor;
-use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web::cookie::Key;
-use actix_web::middleware::NormalizePath;
-use actix_web::{web, App, HttpServer};
-use diesel::r2d2::{ConnectionManager, PooledConnection};
-use diesel::SqliteConnection;
-use diesel_migrations::MigrationHarness;
 use dotenv::dotenv;
 use std::path::PathBuf;
 use std::process::exit;
@@ -45,10 +33,6 @@ mod models {
 
 mod schema;
 
-mod console {
-    pub mod development;
-}
-
 mod helpers {
     pub mod csrf;
     pub mod database;
@@ -63,10 +47,10 @@ mod services {
     pub mod user_service;
 }
 
+mod commands;
 pub mod websocket;
-
 #[derive(Debug)]
-struct AppState {
+pub struct AppState {
     app_name: Mutex<String>,
     _user_id: Mutex<Option<i32>>,
 }
@@ -79,7 +63,7 @@ fn check_app_health() {
     }
 }
 
-fn check_database_health() {
+pub fn check_database_health() {
     println!("Checking Database Health.");
     let database: String =
         env::var("DATABASE_URL").unwrap_or_else(|_| "database/database.sqlite".to_string());
@@ -109,70 +93,13 @@ async fn main() -> std::io::Result<()> {
     }
 
     match command {
-        "serve" => {
-            check_database_health();
-
-            let secret_key = Key::from(
-                env::var("SECRET_KEY")
-                    .expect("SECRET_KEY must be set")
-                    .as_bytes(),
-            );
-
-            // Start WebSocket server actor
-            let ws_server = WsServer::new().start();
-
-            HttpServer::new(move || {
-                App::new()
-                    .wrap(SessionMiddleware::new(
-                        CookieSessionStore::default(),
-                        secret_key.clone(),
-                    ))
-                    .wrap(NormalizePath::trim())
-                    .app_data(web::Data::new(AppState {
-                        app_name: Mutex::from(
-                            env::var("APP_NAME").unwrap_or_else(|_| "".to_string()),
-                        ),
-                        _user_id: Mutex::from(None),
-                    }))
-                    .app_data(web::Data::new(ws_server.clone()))
-                    .configure(routes::config)
-            })
-            .bind((app_url, app_port))?
-            .run()
-            .await
-        }
+        "serve" => commands::serve::run(app_url.clone(), app_port).await,
         "develop" => {
             check_database_health();
-            console::development::run_development().await
+            commands::develop::run_development().await
         }
-        "migrate" => {
-            println!("Starting migration procedure.");
-
-            if args.contains(&"--fresh".to_string()) {
-                println!("Reverting all migrations...");
-                let database: String = env::var("DATABASE_URL")
-                    .unwrap_or_else(|_| "database/database.sqlite".to_string());
-                fs::remove_file(database).expect("Failed to remove database file");
-            }
-
-            println!("Running migrations...");
-            let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
-            conn.run_pending_migrations(models::user::MIGRATIONS)
-                .expect("Failed to run migrations");
-
-            if args.contains(&"--seed".to_string()) {
-                println!("Running seeders...");
-                let _ =
-                    UserSeeder::execute(&mut get_connection()).expect("Failed to seed users table");
-            }
-
-            Ok(())
-        }
-        "seed" => {
-            println!("Running seeders...");
-            let _ = UserSeeder::execute(&mut get_connection()).expect("Failed to seed users table");
-            Ok(())
-        }
+        "migrate" => commands::migrate::run(&args),
+        "seed" => commands::seed::run(),
         _ => {
             eprintln!("Unknown command");
             Ok(())
