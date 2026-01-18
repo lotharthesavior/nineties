@@ -1,4 +1,4 @@
-use diesel::{Insertable, QueryDsl, RunQueryDsl, SqliteConnection};
+use diesel::{QueryDsl, RunQueryDsl, SqliteConnection};
 use crate::database::seeders::traits::seeder::Seeder;
 use crate::models::user::NewUser;
 use crate::schema::users::dsl::*;

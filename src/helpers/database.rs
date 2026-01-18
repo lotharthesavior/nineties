@@ -40,6 +40,7 @@ pub fn get_connection() -> PooledConnection<ConnectionManager<SqliteConnection>>
     }
 }
 
+#[allow(dead_code)]
 pub fn get_connection_pool() -> Pool<ConnectionManager<SqliteConnection>> {
     let current_db_url = env::var("DATABASE_URL")
         .unwrap_or_else(|_| "database/database.sqlite".to_string());

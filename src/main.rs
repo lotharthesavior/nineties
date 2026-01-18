@@ -9,9 +9,8 @@ use std::sync::Mutex;
 use actix_web::cookie::Key;
 use actix_web::middleware::NormalizePath;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
-use diesel::{IntoSql, SqliteConnection};
+use diesel::SqliteConnection;
 use diesel_migrations::MigrationHarness;
-use tokio::io::{AsyncBufReadExt};
 use crate::database::seeders::create_users::{UserSeeder};
 use crate::database::seeders::traits::seeder::Seeder;
 use crate::helpers::database::get_connection;
@@ -69,7 +68,7 @@ pub mod websocket;
 #[derive(Debug)]
 struct AppState {
     app_name: Mutex<String>,
-    user_id: Mutex<Option<i32>>,
+    _user_id: Mutex<Option<i32>>,
 }
 
 fn check_app_health() {
@@ -130,7 +129,7 @@ async fn main() -> std::io::Result<()> {
                     .wrap(NormalizePath::trim())
                     .app_data(web::Data::new(AppState {
                         app_name: Mutex::from(env::var("APP_NAME").unwrap_or_else(|_| "".to_string())),
-                        user_id: Mutex::from(None),
+                        _user_id: Mutex::from(None),
                     }))
                     .app_data(web::Data::new(ws_server.clone()))
                     .configure(routes::config)

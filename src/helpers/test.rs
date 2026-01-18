@@ -3,6 +3,7 @@ use std::env;
 #[cfg(test)]
 use crate::helpers::database::reset_pool;
 
+#[allow(dead_code)]
 pub struct TestFinalizer;
 impl Drop for TestFinalizer {
     fn drop(&mut self) {

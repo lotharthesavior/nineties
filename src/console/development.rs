@@ -1,7 +1,6 @@
 use std::{fs, io};
 use std::path::PathBuf;
 use std::process::ExitStatus;
-use fs_extra::dir::{copy, CopyOptions};
 use tokio::process::{ChildStderr, ChildStdout, Command};
 use tokio::task::JoinHandle;
 use tokio::try_join;
