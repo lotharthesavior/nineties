@@ -1,20 +1,20 @@
-use actix::Actor;
-use actix_web::{web, App, HttpServer};
-use actix_session::{SessionMiddleware, storage::CookieSessionStore};
-use dotenv::dotenv;
-use std::{env, fs};
-use std::path::PathBuf;
-use std::process::exit;
-use std::sync::Mutex;
-use actix_web::cookie::Key;
-use actix_web::middleware::NormalizePath;
-use diesel::r2d2::{ConnectionManager, PooledConnection};
-use diesel::SqliteConnection;
-use diesel_migrations::MigrationHarness;
-use crate::database::seeders::create_users::{UserSeeder};
+use crate::database::seeders::create_users::UserSeeder;
 use crate::database::seeders::traits::seeder::Seeder;
 use crate::helpers::database::get_connection;
 use crate::websocket::server::WsServer;
+use actix::Actor;
+use actix_session::{storage::CookieSessionStore, SessionMiddleware};
+use actix_web::cookie::Key;
+use actix_web::middleware::NormalizePath;
+use actix_web::{web, App, HttpServer};
+use diesel::r2d2::{ConnectionManager, PooledConnection};
+use diesel::SqliteConnection;
+use diesel_migrations::MigrationHarness;
+use dotenv::dotenv;
+use std::path::PathBuf;
+use std::process::exit;
+use std::sync::Mutex;
+use std::{env, fs};
 
 mod routes;
 mod http {
@@ -23,9 +23,9 @@ mod http {
     }
 
     pub mod controllers {
-        pub mod home_controller;
-        pub mod auth_controller;
         pub mod admin_controller;
+        pub mod auth_controller;
+        pub mod home_controller;
     }
 }
 
@@ -50,13 +50,13 @@ mod console {
 }
 
 mod helpers {
-    pub mod session;
+    pub mod csrf;
     pub mod database;
     pub mod form;
     pub mod general;
+    pub mod session;
     pub mod template;
     pub mod test;
-    pub mod csrf;
 }
 
 mod services {
@@ -81,8 +81,8 @@ fn check_app_health() {
 
 fn check_database_health() {
     println!("Checking Database Health.");
-    let database: String = env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "database/database.sqlite".to_string());
+    let database: String =
+        env::var("DATABASE_URL").unwrap_or_else(|_| "database/database.sqlite".to_string());
 
     if !fs::exists(PathBuf::from(database)).unwrap() {
         println!("Database file not found. Please run `cargo run migrate` to create the database.");
@@ -97,8 +97,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let args: Vec<String> = env::args().collect();
-    let app_url: String = env::var("APP_URL")
-        .expect("APP_URL must be set");
+    let app_url: String = env::var("APP_URL").expect("APP_URL must be set");
     let app_port: u16 = env::var("APP_PORT")
         .unwrap_or_else(|_| "8080".to_string())
         .parse::<u16>()
@@ -113,9 +112,11 @@ async fn main() -> std::io::Result<()> {
         "serve" => {
             check_database_health();
 
-            let secret_key = Key::from(env::var("SECRET_KEY")
-                .expect("SECRET_KEY must be set")
-                .as_bytes());
+            let secret_key = Key::from(
+                env::var("SECRET_KEY")
+                    .expect("SECRET_KEY must be set")
+                    .as_bytes(),
+            );
 
             // Start WebSocket server actor
             let ws_server = WsServer::new().start();
@@ -128,15 +129,17 @@ async fn main() -> std::io::Result<()> {
                     ))
                     .wrap(NormalizePath::trim())
                     .app_data(web::Data::new(AppState {
-                        app_name: Mutex::from(env::var("APP_NAME").unwrap_or_else(|_| "".to_string())),
+                        app_name: Mutex::from(
+                            env::var("APP_NAME").unwrap_or_else(|_| "".to_string()),
+                        ),
                         _user_id: Mutex::from(None),
                     }))
                     .app_data(web::Data::new(ws_server.clone()))
                     .configure(routes::config)
             })
-                .bind((app_url, app_port))?
-                .run()
-                .await
+            .bind((app_url, app_port))?
+            .run()
+            .await
         }
         "develop" => {
             check_database_health();
@@ -159,16 +162,15 @@ async fn main() -> std::io::Result<()> {
 
             if args.contains(&"--seed".to_string()) {
                 println!("Running seeders...");
-                let _ = UserSeeder::execute(&mut get_connection())
-                    .expect("Failed to seed users table");
+                let _ =
+                    UserSeeder::execute(&mut get_connection()).expect("Failed to seed users table");
             }
 
             Ok(())
         }
         "seed" => {
             println!("Running seeders...");
-            let _ = UserSeeder::execute(&mut get_connection())
-                .expect("Failed to seed users table");
+            let _ = UserSeeder::execute(&mut get_connection()).expect("Failed to seed users table");
             Ok(())
         }
         _ => {

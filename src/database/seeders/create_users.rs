@@ -1,8 +1,8 @@
-use diesel::{QueryDsl, RunQueryDsl, SqliteConnection};
 use crate::database::seeders::traits::seeder::Seeder;
 use crate::models::user::NewUser;
 use crate::schema::users::dsl::*;
 use crate::services::user_service::prepare_password;
+use diesel::{QueryDsl, RunQueryDsl, SqliteConnection};
 
 pub struct UserSeeder;
 
@@ -17,11 +17,13 @@ impl Seeder for UserSeeder {
         }
 
         println!("Creating users...");
-        let _ = diesel::insert_into(users).values(NewUser {
-            name: "Jekyll",
-            email: expected_email,
-            password: &*prepare_password("password"),
-        }).execute(conn);
+        let _ = diesel::insert_into(users)
+            .values(NewUser {
+                name: "Jekyll",
+                email: expected_email,
+                password: &*prepare_password("password"),
+            })
+            .execute(conn);
 
         Ok(())
     }

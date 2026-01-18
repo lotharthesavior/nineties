@@ -1,10 +1,10 @@
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use argon2::password_hash::rand_core::OsRng;
-use argon2::password_hash::SaltString;
-use diesel::{QueryDsl, ExpressionMethods, RunQueryDsl};
 use crate::helpers::database::get_connection;
 use crate::models::user::User;
 use crate::schema::users::dsl::*;
+use argon2::password_hash::rand_core::OsRng;
+use argon2::password_hash::SaltString;
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 
 #[derive(PartialEq, Debug)]
 pub enum UserValidationResult {
@@ -51,5 +51,8 @@ pub fn prepare_password(password_string: &str) -> String {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
 
-    argon2.hash_password(password_bytes, &salt).unwrap().to_string()
+    argon2
+        .hash_password(password_bytes, &salt)
+        .unwrap()
+        .to_string()
 }

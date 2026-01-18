@@ -1,8 +1,3 @@
-use actix_session::Session;
-use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
-use serde::{Deserialize, Serialize};
-use crate::AppState;
 use crate::helpers::csrf::{get_csrf_token, validate_csrf_token};
 use crate::helpers::database::get_connection;
 use crate::helpers::general::gravatar_url;
@@ -11,7 +6,14 @@ use crate::helpers::template::load_template;
 use crate::models::user::User;
 use crate::schema::users::dsl::users;
 use crate::schema::users::{email, name, password};
-use crate::services::user_service::{prepare_password, validate_user_credentials, UserValidationResult};
+use crate::services::user_service::{
+    prepare_password, validate_user_credentials, UserValidationResult,
+};
+use crate::AppState;
+use actix_session::Session;
+use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use serde::{Deserialize, Serialize};
 
 #[get("")] // /admin - The Dashboard
 pub async fn dashboard(data: web::Data<AppState>, session: Session) -> HttpResponse {
@@ -26,12 +28,16 @@ pub async fn dashboard(data: web::Data<AppState>, session: Session) -> HttpRespo
             ("user_name", &user.name),
             ("user_avatar", &user_avatar),
         ],
-        None
+        None,
     ))
 }
 
 #[get("/settings")]
-pub async fn settings(_req: HttpRequest, data: web::Data<AppState>, session: Session) -> impl Responder {
+pub async fn settings(
+    _req: HttpRequest,
+    data: web::Data<AppState>,
+    session: Session,
+) -> impl Responder {
     let user: User = get_session_user(&session).unwrap();
     let app_name = &data.app_name.lock().unwrap();
     let user_avatar = gravatar_url(&user.email);
@@ -43,12 +49,16 @@ pub async fn settings(_req: HttpRequest, data: web::Data<AppState>, session: Ses
             ("user_name", &user.name),
             ("user_avatar", &user_avatar),
         ],
-        None
+        None,
     ))
 }
 
 #[get("/profile")]
-pub async fn profile(_req: HttpRequest, data: web::Data<AppState>, session: Session) -> impl Responder {
+pub async fn profile(
+    _req: HttpRequest,
+    data: web::Data<AppState>,
+    session: Session,
+) -> impl Responder {
     let user: User = get_session_user(&session).unwrap();
     let app_name = &data.app_name.lock().unwrap();
     let user_name: String = user.name;
@@ -63,9 +73,9 @@ pub async fn profile(_req: HttpRequest, data: web::Data<AppState>, session: Sess
             ("user_name", &user_name),
             ("user_email", &user_email),
             ("user_avatar", &user_avatar),
-            ("csrf_token", &csrf_token)
+            ("csrf_token", &csrf_token),
         ],
-        None
+        None,
     ))
 }
 
@@ -96,10 +106,7 @@ pub struct ProfileResponse {
 }
 
 #[post("/profile")]
-pub async fn profile_post(
-    form: web::Form<UserForm>,
-    session: Session
-) -> impl Responder {
+pub async fn profile_post(form: web::Form<UserForm>, session: Session) -> impl Responder {
     // Validate CSRF token
     if !validate_csrf_token(&session, &form.csrf_token) {
         return HttpResponse::Forbidden()
@@ -134,7 +141,7 @@ pub async fn profile_post(
 #[post("/profile-password")]
 pub async fn profile_password_post(
     form: web::Form<PasswordForm>,
-    session: Session
+    session: Session,
 ) -> impl Responder {
     // Validate CSRF token
     if !validate_csrf_token(&session, &form.csrf_token) {
@@ -170,17 +177,6 @@ pub async fn profile_password_post(
 
 #[cfg(test)]
 mod tests {
-    use std::env;
-    use std::sync::Mutex;
-    use actix_session::{SessionMiddleware};
-    use actix_session::storage::CookieSessionStore;
-    use actix_web::{http, test, web, App};
-    use actix_web::cookie::{Cookie, Key};
-    use diesel::{QueryDsl, ExpressionMethods, RunQueryDsl, SqliteConnection};
-    use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
-    use diesel_migrations::MigrationHarness;
-    use serial_test::serial;
-    use crate::{AppState};
     use crate::database::seeders::create_users::UserSeeder;
     use crate::database::seeders::traits::seeder::Seeder;
     use crate::helpers::database::get_connection;
@@ -190,12 +186,25 @@ mod tests {
     use crate::models::user::{User, MIGRATIONS};
     use crate::schema::users::dsl::*;
     use crate::services::user_service::{validate_user_credentials, UserValidationResult};
+    use crate::AppState;
+    use actix_session::storage::CookieSessionStore;
+    use actix_session::SessionMiddleware;
+    use actix_web::cookie::{Cookie, Key};
+    use actix_web::{http, test, web, App};
+    use diesel::r2d2::{ConnectionManager, PooledConnection};
+    use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
+    use diesel_migrations::MigrationHarness;
+    use serial_test::serial;
+    use std::env;
+    use std::sync::Mutex;
 
     fn prepare_test_db() -> PooledConnection<ConnectionManager<SqliteConnection>> {
         dotenv::from_filename(".env.test").ok();
         let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
-        conn.revert_all_migrations(MIGRATIONS).expect("Failed to revert migrations");
-        conn.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
+        conn.revert_all_migrations(MIGRATIONS)
+            .expect("Failed to revert migrations");
+        conn.run_pending_migrations(MIGRATIONS)
+            .expect("Failed to run migrations");
 
         conn
     }
@@ -224,15 +233,17 @@ mod tests {
 
         seed_users_table();
 
-        let secret_key = Key::from(env::var("SECRET_KEY")
-            .expect("SECRET_KEY must be set")
-            .as_bytes());
+        let secret_key = Key::from(
+            env::var("SECRET_KEY")
+                .expect("SECRET_KEY must be set")
+                .as_bytes(),
+        );
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(AppState {
                     app_name: Mutex::from(env::var("APP_NAME").unwrap_or_else(|_| "".to_string())),
-                    user_id: Mutex::from(None),
+                    _user_id: Mutex::from(None),
                 }))
                 .wrap(SessionMiddleware::new(
                     CookieSessionStore::default(),
@@ -244,25 +255,24 @@ mod tests {
                     web::scope("/admin")
                         .service(admin_controller::dashboard)
                         .service(admin_controller::settings)
-                        .wrap(AuthMiddleware)
-                )
-        ).await;
+                        .wrap(AuthMiddleware),
+                ),
+        )
+        .await;
 
         // Test that unauthenticated access redirects
-        let req1 = test::TestRequest::get()
-            .uri("/admin")
-            .to_request();
+        let req1 = test::TestRequest::get().uri("/admin").to_request();
         let resp1 = test::call_service(&app, req1).await;
         assert_eq!(resp1.status(), http::StatusCode::FOUND);
 
         // Get signin page to obtain CSRF token
-        let req_signin = test::TestRequest::get()
-            .uri("/signin")
-            .to_request();
+        let req_signin = test::TestRequest::get().uri("/signin").to_request();
         let resp_signin = test::call_service(&app, req_signin).await;
         let headers_signin = resp_signin.headers().clone();
         let cookie_header_signin = headers_signin.get("set-cookie").unwrap().to_str().unwrap();
-        let session_cookie = Cookie::parse_encoded(cookie_header_signin).unwrap().into_owned();
+        let session_cookie = Cookie::parse_encoded(cookie_header_signin)
+            .unwrap()
+            .into_owned();
         let body = test::read_body(resp_signin).await;
         let body_str = String::from_utf8(body.to_vec()).unwrap();
         let csrf_token = extract_csrf_token(&body_str);
@@ -271,7 +281,11 @@ mod tests {
         let req_login = test::TestRequest::post()
             .uri("/signin")
             .cookie(session_cookie.clone())
-            .set_form(&[("csrf_token", csrf_token.as_str()), ("email", "jekyll@example.com"), ("password", "password")])
+            .set_form(&[
+                ("csrf_token", csrf_token.as_str()),
+                ("email", "jekyll@example.com"),
+                ("password", "password"),
+            ])
             .to_request();
         let resp_login = test::call_service(&app, req_login).await;
         let headers = resp_login.headers().clone();
@@ -294,15 +308,17 @@ mod tests {
 
         seed_users_table();
 
-        let secret_key = Key::from(env::var("SECRET_KEY")
-            .expect("SECRET_KEY must be set")
-            .as_bytes());
+        let secret_key = Key::from(
+            env::var("SECRET_KEY")
+                .expect("SECRET_KEY must be set")
+                .as_bytes(),
+        );
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(AppState {
                     app_name: Mutex::from(env::var("APP_NAME").unwrap_or_else(|_| "".to_string())),
-                    user_id: Mutex::from(None),
+                    _user_id: Mutex::from(None),
                 }))
                 .wrap(SessionMiddleware::new(
                     CookieSessionStore::default(),
@@ -314,25 +330,24 @@ mod tests {
                     web::scope("/admin")
                         .service(admin_controller::dashboard)
                         .service(admin_controller::settings)
-                        .wrap(AuthMiddleware)
-                )
-        ).await;
+                        .wrap(AuthMiddleware),
+                ),
+        )
+        .await;
 
         // Test that unauthenticated access redirects
-        let req1 = test::TestRequest::get()
-            .uri("/admin/settings")
-            .to_request();
+        let req1 = test::TestRequest::get().uri("/admin/settings").to_request();
         let resp1 = test::call_service(&app, req1).await;
         assert_eq!(resp1.status(), http::StatusCode::FOUND);
 
         // Get signin page to obtain CSRF token
-        let req_signin = test::TestRequest::get()
-            .uri("/signin")
-            .to_request();
+        let req_signin = test::TestRequest::get().uri("/signin").to_request();
         let resp_signin = test::call_service(&app, req_signin).await;
         let headers_signin = resp_signin.headers().clone();
         let cookie_header_signin = headers_signin.get("set-cookie").unwrap().to_str().unwrap();
-        let session_cookie = Cookie::parse_encoded(cookie_header_signin).unwrap().into_owned();
+        let session_cookie = Cookie::parse_encoded(cookie_header_signin)
+            .unwrap()
+            .into_owned();
         let body = test::read_body(resp_signin).await;
         let body_str = String::from_utf8(body.to_vec()).unwrap();
         let csrf_token = extract_csrf_token(&body_str);
@@ -341,7 +356,11 @@ mod tests {
         let req_login = test::TestRequest::post()
             .uri("/signin")
             .cookie(session_cookie.clone())
-            .set_form(&[("csrf_token", csrf_token.as_str()), ("email", "jekyll@example.com"), ("password", "password")])
+            .set_form(&[
+                ("csrf_token", csrf_token.as_str()),
+                ("email", "jekyll@example.com"),
+                ("password", "password"),
+            ])
             .to_request();
         let resp_login = test::call_service(&app, req_login).await;
         let headers = resp_login.headers().clone();
@@ -364,15 +383,17 @@ mod tests {
 
         seed_users_table();
 
-        let secret_key = Key::from(env::var("SECRET_KEY")
-            .expect("SECRET_KEY must be set")
-            .as_bytes());
+        let secret_key = Key::from(
+            env::var("SECRET_KEY")
+                .expect("SECRET_KEY must be set")
+                .as_bytes(),
+        );
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(AppState {
                     app_name: Mutex::from(env::var("APP_NAME").unwrap_or_else(|_| "".to_string())),
-                    user_id: Mutex::from(None),
+                    _user_id: Mutex::from(None),
                 }))
                 .wrap(SessionMiddleware::new(
                     CookieSessionStore::default(),
@@ -384,18 +405,19 @@ mod tests {
                     web::scope("/admin")
                         .service(admin_controller::profile)
                         .service(admin_controller::profile_post)
-                        .wrap(AuthMiddleware)
-                )
-        ).await;
+                        .wrap(AuthMiddleware),
+                ),
+        )
+        .await;
 
         // Get signin page to obtain CSRF token
-        let req_signin = test::TestRequest::get()
-            .uri("/signin")
-            .to_request();
+        let req_signin = test::TestRequest::get().uri("/signin").to_request();
         let resp_signin = test::call_service(&app, req_signin).await;
         let headers_signin = resp_signin.headers().clone();
         let cookie_header_signin = headers_signin.get("set-cookie").unwrap().to_str().unwrap();
-        let session_cookie = Cookie::parse_encoded(cookie_header_signin).unwrap().into_owned();
+        let session_cookie = Cookie::parse_encoded(cookie_header_signin)
+            .unwrap()
+            .into_owned();
         let body = test::read_body(resp_signin).await;
         let body_str = String::from_utf8(body.to_vec()).unwrap();
         let csrf_token = extract_csrf_token(&body_str);
@@ -404,7 +426,11 @@ mod tests {
         let req_login = test::TestRequest::post()
             .uri("/signin")
             .cookie(session_cookie.clone())
-            .set_form(&[("csrf_token", csrf_token.as_str()), ("email", "jekyll@example.com"), ("password", "password")])
+            .set_form(&[
+                ("csrf_token", csrf_token.as_str()),
+                ("email", "jekyll@example.com"),
+                ("password", "password"),
+            ])
             .to_request();
         let resp_login = test::call_service(&app, req_login).await;
         let headers = resp_login.headers().clone();
@@ -436,7 +462,11 @@ mod tests {
         let req4 = test::TestRequest::post()
             .cookie(parsed_cookie)
             .uri("/admin/profile")
-            .set_form(&[("csrf_token", csrf_token), ("name", "Hyde"), ("email", new_email)])
+            .set_form(&[
+                ("csrf_token", csrf_token),
+                ("name", "Hyde"),
+                ("email", new_email),
+            ])
             .to_request();
         let resp4 = test::call_service(&app, req4).await;
         assert_eq!(resp4.status(), http::StatusCode::OK);
@@ -458,15 +488,17 @@ mod tests {
 
         let user_email = "jekyll@example.com";
 
-        let secret_key = Key::from(env::var("SECRET_KEY")
-            .expect("SECRET_KEY must be set")
-            .as_bytes());
+        let secret_key = Key::from(
+            env::var("SECRET_KEY")
+                .expect("SECRET_KEY must be set")
+                .as_bytes(),
+        );
 
         let app = test::init_service(
             App::new()
                 .app_data(web::Data::new(AppState {
                     app_name: Mutex::from(env::var("APP_NAME").unwrap_or_else(|_| "".to_string())),
-                    user_id: Mutex::from(None),
+                    _user_id: Mutex::from(None),
                 }))
                 .wrap(SessionMiddleware::new(
                     CookieSessionStore::default(),
@@ -478,18 +510,19 @@ mod tests {
                     web::scope("/admin")
                         .service(admin_controller::profile)
                         .service(admin_controller::profile_password_post)
-                        .wrap(AuthMiddleware)
-                )
-        ).await;
+                        .wrap(AuthMiddleware),
+                ),
+        )
+        .await;
 
         // Get signin page to obtain CSRF token
-        let req_signin = test::TestRequest::get()
-            .uri("/signin")
-            .to_request();
+        let req_signin = test::TestRequest::get().uri("/signin").to_request();
         let resp_signin = test::call_service(&app, req_signin).await;
         let headers_signin = resp_signin.headers().clone();
         let cookie_header_signin = headers_signin.get("set-cookie").unwrap().to_str().unwrap();
-        let session_cookie = Cookie::parse_encoded(cookie_header_signin).unwrap().into_owned();
+        let session_cookie = Cookie::parse_encoded(cookie_header_signin)
+            .unwrap()
+            .into_owned();
         let body = test::read_body(resp_signin).await;
         let body_str = String::from_utf8(body.to_vec()).unwrap();
         let csrf_token = extract_csrf_token(&body_str);
@@ -498,7 +531,11 @@ mod tests {
         let req_login = test::TestRequest::post()
             .uri("/signin")
             .cookie(session_cookie.clone())
-            .set_form(&[("csrf_token", csrf_token.as_str()), ("email", "jekyll@example.com"), ("password", "password")])
+            .set_form(&[
+                ("csrf_token", csrf_token.as_str()),
+                ("email", "jekyll@example.com"),
+                ("password", "password"),
+            ])
             .to_request();
         let resp_login = test::call_service(&app, req_login).await;
         let headers = resp_login.headers().clone();
@@ -537,6 +574,9 @@ mod tests {
             .to_request();
         let resp4 = test::call_service(&app, req4).await;
         assert_eq!(resp4.status(), http::StatusCode::OK);
-        assert_eq!(validate_user_credentials(user_email, "new-password"), UserValidationResult::Valid);
+        assert_eq!(
+            validate_user_credentials(user_email, "new-password"),
+            UserValidationResult::Valid
+        );
     }
 }

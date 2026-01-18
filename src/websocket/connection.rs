@@ -1,13 +1,11 @@
 use actix::prelude::*;
+use actix_session::Session;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
-use actix_session::Session;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
-use crate::websocket::server::{
-    Connect, Disconnect, Subscribe, Unsubscribe, WsMessage, WsServer,
-};
+use crate::websocket::server::{Connect, Disconnect, Subscribe, Unsubscribe, WsMessage, WsServer};
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -42,7 +40,10 @@ impl WsConnection {
         ctx.run_interval(HEARTBEAT_INTERVAL, |act, ctx| {
             // Check client heartbeat
             if Instant::now().duration_since(act.heartbeat) > CLIENT_TIMEOUT {
-                eprintln!("WebSocket client heartbeat failed, disconnecting: {}", act.id);
+                eprintln!(
+                    "WebSocket client heartbeat failed, disconnecting: {}",
+                    act.id
+                );
                 ctx.stop();
                 return;
             }
@@ -56,16 +57,10 @@ impl WsConnection {
         if let Ok(cmd) = serde_json::from_str::<ClientCommand>(text) {
             match cmd {
                 ClientCommand::Subscribe { room } => {
-                    self.server_addr.do_send(Subscribe {
-                        id: self.id,
-                        room,
-                    });
+                    self.server_addr.do_send(Subscribe { id: self.id, room });
                 }
                 ClientCommand::Unsubscribe { room } => {
-                    self.server_addr.do_send(Unsubscribe {
-                        id: self.id,
-                        room,
-                    });
+                    self.server_addr.do_send(Unsubscribe { id: self.id, room });
                 }
                 ClientCommand::Ping => {
                     ctx.text(r#"{"type":"pong"}"#);

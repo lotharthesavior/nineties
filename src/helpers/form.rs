@@ -1,6 +1,6 @@
-
 pub fn get_from_form_body(field: String, req_body: String) -> String {
-    req_body.split('&')
+    req_body
+        .split('&')
         .find(|param| param.starts_with(&format!("{}=", field)))
         .and_then(|param| param.split('=').nth(1))
         .map(|field_found| {

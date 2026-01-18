@@ -27,24 +27,24 @@ pub struct NewUser<'a> {
 
 #[cfg(test)]
 mod tests {
-    use std::env;
-    use actix_web::test;
-    use diesel::{QueryDsl, RunQueryDsl, SqliteConnection, ExpressionMethods, Connection};
-    use diesel::r2d2::{ConnectionManager, PooledConnection};
-    use diesel::result::Error;
-    use diesel_migrations::MigrationHarness;
-    use serial_test::serial;
-    use crate::database::seeders::traits::seeder::Seeder;
     use crate::database::seeders::create_users::UserSeeder;
+    use crate::database::seeders::traits::seeder::Seeder;
     use crate::helpers::database::get_connection;
     use crate::helpers::test::TestFinalizer;
     use crate::models::user::{NewUser, User, MIGRATIONS};
     use crate::schema::users::dsl::*;
 
+    use diesel::r2d2::{ConnectionManager, PooledConnection};
+    use diesel::result::Error;
+    use diesel::{Connection, ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
+    use diesel_migrations::MigrationHarness;
+    use serial_test::serial;
+
     fn prepare_test_db() -> PooledConnection<ConnectionManager<SqliteConnection>> {
         dotenv::from_filename(".env.test").ok();
         let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
-        conn.run_pending_migrations(MIGRATIONS).expect("Failed to run migrations");
+        conn.run_pending_migrations(MIGRATIONS)
+            .expect("Failed to run migrations");
         conn
     }
 
@@ -63,13 +63,17 @@ mod tests {
         conn.test_transaction::<_, Error, _>(|conn| {
             let expected_email: String = "john@email.com".to_string();
 
-            let _ = diesel::insert_into(users).values(NewUser {
-                name: "John Doe",
-                email: &expected_email,
-                password: "password",
-            }).execute(conn).unwrap();
+            let _ = diesel::insert_into(users)
+                .values(NewUser {
+                    name: "John Doe",
+                    email: &expected_email,
+                    password: "password",
+                })
+                .execute(conn)
+                .unwrap();
 
-            let results: Vec<User> = users.filter(email.eq(&expected_email))
+            let results: Vec<User> = users
+                .filter(email.eq(&expected_email))
                 .load::<User>(conn)
                 .unwrap();
 
@@ -91,12 +95,20 @@ mod tests {
 
             let expected_email: &str = "jekyll@example.com";
 
-            let results: Vec<User> = users.filter(email.eq(expected_email)).get_results(conn).unwrap();
+            let results: Vec<User> = users
+                .filter(email.eq(expected_email))
+                .get_results(conn)
+                .unwrap();
             assert!(results.len() > 0);
 
-            let _ = diesel::delete(users.filter(email.eq(expected_email))).execute(conn).unwrap();
+            let _ = diesel::delete(users.filter(email.eq(expected_email)))
+                .execute(conn)
+                .unwrap();
 
-            let results2: Vec<User> = users.filter(email.eq(expected_email)).get_results(conn).unwrap();
+            let results2: Vec<User> = users
+                .filter(email.eq(expected_email))
+                .get_results(conn)
+                .unwrap();
             assert!(results2.len() == 0);
 
             Ok(())
@@ -110,20 +122,22 @@ mod tests {
 
         let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
 
-        conn.test_transaction::<_, Error, _>(|conn: &mut PooledConnection<ConnectionManager<SqliteConnection>>| {
-            seed_users_table();
+        conn.test_transaction::<_, Error, _>(
+            |conn: &mut PooledConnection<ConnectionManager<SqliteConnection>>| {
+                seed_users_table();
 
-            let all_users: Vec<i32> = users.select(id).load::<i32>(conn).unwrap();
-            let user_id: i32 = all_users[0];
+                let all_users: Vec<i32> = users.select(id).load::<i32>(conn).unwrap();
+                let user_id: i32 = all_users[0];
 
-            let user: Result<User, Error> = users.find(user_id).first::<User>(conn);
-            let user2: Result<User, Error> = users.find(99).first::<User>(conn);
+                let user: Result<User, Error> = users.find(user_id).first::<User>(conn);
+                let user2: Result<User, Error> = users.find(99).first::<User>(conn);
 
-            assert!(user.is_ok());
-            assert!(user2.is_err());
+                assert!(user.is_ok());
+                assert!(user2.is_err());
 
-            Ok(())
-        });
+                Ok(())
+            },
+        );
     }
 
     #[serial]
@@ -133,30 +147,31 @@ mod tests {
 
         let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
 
-        conn.test_transaction::<_, Error, _>(|conn: &mut PooledConnection<ConnectionManager<SqliteConnection>>| {
-            seed_users_table();
+        conn.test_transaction::<_, Error, _>(
+            |conn: &mut PooledConnection<ConnectionManager<SqliteConnection>>| {
+                seed_users_table();
 
-            let all_users: Vec<i32> = users.select(id).load::<i32>(conn).unwrap();
-            let user_id: i32 = all_users[0];
+                let all_users: Vec<i32> = users.select(id).load::<i32>(conn).unwrap();
+                let user_id: i32 = all_users[0];
 
-            let user: Result<User, Error> = users.find(user_id).first::<User>(conn);
-            assert!(user.is_ok());
+                let user: Result<User, Error> = users.find(user_id).first::<User>(conn);
+                assert!(user.is_ok());
 
-            let new_email: &str = "newemail@example.com";
+                let new_email: &str = "newemail@example.com";
 
-            let result = diesel::update(users.find(user_id))
-                .set(email.eq(new_email))
-                .execute(conn)
-                .unwrap();
-            assert_eq!(result, 1);
+                let result = diesel::update(users.find(user_id))
+                    .set(email.eq(new_email))
+                    .execute(conn)
+                    .unwrap();
+                assert_eq!(result, 1);
 
-            let user: Result<User, Error> = users
-                .filter(email.eq(new_email))
-                .first::<User>(conn);
-            assert!(user.is_ok());
-            assert_eq!(user.unwrap().email, new_email);
+                let user: Result<User, Error> =
+                    users.filter(email.eq(new_email)).first::<User>(conn);
+                assert!(user.is_ok());
+                assert_eq!(user.unwrap().email, new_email);
 
-            Ok(())
-        });
+                Ok(())
+            },
+        );
     }
 }

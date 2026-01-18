@@ -1,7 +1,7 @@
+use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
+use diesel::SqliteConnection;
 use std::env;
 use std::sync::{OnceLock, RwLock};
-use diesel::SqliteConnection;
-use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 
 struct PoolState {
     pool: Pool<ConnectionManager<SqliteConnection>>,
@@ -11,8 +11,8 @@ struct PoolState {
 static POOL: OnceLock<RwLock<Option<PoolState>>> = OnceLock::new();
 
 pub fn get_connection() -> PooledConnection<ConnectionManager<SqliteConnection>> {
-    let current_db_url = env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "database/database.sqlite".to_string());
+    let current_db_url =
+        env::var("DATABASE_URL").unwrap_or_else(|_| "database/database.sqlite".to_string());
 
     let pool_state = POOL.get_or_init(|| RwLock::new(Some(create_pool_state(&current_db_url))));
 
@@ -36,14 +36,19 @@ pub fn get_connection() -> PooledConnection<ConnectionManager<SqliteConnection>>
         if needs_recreate {
             *state = Some(create_pool_state(&current_db_url));
         }
-        state.as_ref().unwrap().pool.get().expect("Failed to get connection from pool")
+        state
+            .as_ref()
+            .unwrap()
+            .pool
+            .get()
+            .expect("Failed to get connection from pool")
     }
 }
 
 #[allow(dead_code)]
 pub fn get_connection_pool() -> Pool<ConnectionManager<SqliteConnection>> {
-    let current_db_url = env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "database/database.sqlite".to_string());
+    let current_db_url =
+        env::var("DATABASE_URL").unwrap_or_else(|_| "database/database.sqlite".to_string());
 
     let pool_state = POOL.get_or_init(|| RwLock::new(Some(create_pool_state(&current_db_url))));
 
