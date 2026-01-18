@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::AppState;
 use crate::helpers::csrf::{get_csrf_token, validate_csrf_token};
 use crate::helpers::database::get_connection;
+use crate::helpers::general::gravatar_url;
 use crate::helpers::session::get_session_user;
 use crate::helpers::template::load_template;
 use crate::models::user::User;
@@ -14,14 +15,16 @@ use crate::services::user_service::{prepare_password, validate_user_credentials,
 
 #[get("")] // /admin - The Dashboard
 pub async fn dashboard(data: web::Data<AppState>, session: Session) -> HttpResponse {
-    let user: Option<User> = get_session_user(&session);
+    let user: User = get_session_user(&session).unwrap();
     let app_name = &data.app_name.lock().unwrap();
+    let user_avatar = gravatar_url(&user.email);
 
     HttpResponse::Ok().body(load_template(
         "admin/pages/dashboard.html",
         vec![
             ("name", app_name),
-            ("user_name", &user.unwrap().name),
+            ("user_name", &user.name),
+            ("user_avatar", &user_avatar),
         ],
         None
     ))
@@ -29,14 +32,16 @@ pub async fn dashboard(data: web::Data<AppState>, session: Session) -> HttpRespo
 
 #[get("/settings")]
 pub async fn settings(_req: HttpRequest, data: web::Data<AppState>, session: Session) -> impl Responder {
-    let user: Option<User> = get_session_user(&session);
+    let user: User = get_session_user(&session).unwrap();
     let app_name = &data.app_name.lock().unwrap();
+    let user_avatar = gravatar_url(&user.email);
 
     HttpResponse::Ok().body(load_template(
         "admin/pages/settings.html",
         vec![
             ("name", app_name),
-            ("user_name", &user.unwrap().name)
+            ("user_name", &user.name),
+            ("user_avatar", &user_avatar),
         ],
         None
     ))
@@ -48,6 +53,7 @@ pub async fn profile(_req: HttpRequest, data: web::Data<AppState>, session: Sess
     let app_name = &data.app_name.lock().unwrap();
     let user_name: String = user.name;
     let user_email: String = user.email;
+    let user_avatar = gravatar_url(&user_email);
     let csrf_token = get_csrf_token(&session);
 
     HttpResponse::Ok().body(load_template(
@@ -56,6 +62,7 @@ pub async fn profile(_req: HttpRequest, data: web::Data<AppState>, session: Sess
             ("name", app_name),
             ("user_name", &user_name),
             ("user_email", &user_email),
+            ("user_avatar", &user_avatar),
             ("csrf_token", &csrf_token)
         ],
         None
