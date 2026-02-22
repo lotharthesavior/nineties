@@ -165,6 +165,59 @@ Seeders don't have a command at this moment, but you can create them by creating
 
 Your new seeders must implement the `Seeder` trait.
 
+### JWT Bearer Authentication (API Alternative)
+
+JWT Bearer tokens provide stateless auth for separate frontend/API clients alongside session cookies for HTML.
+
+**Setup:** Copy `.env.example` to `.env`, set `JWT_SECRET` (min 32 chars) and `JWT_EXPIRY_HOURS` (default 24).
+
+**Endpoints:**
+- `POST /api/login` body: `{"email": "jekyll@example.com", "password": "password"}` → `{"token": "..."}`
+- `GET /api/protected/profile` header: `Authorization: Bearer <token>` → user JSON (password omitted)
+
+**Curl Login & Profile:**
+```bash
+# Login
+curl -X POST http://localhost:8080/api/login \
+-H "Content-Type: application/json" \
+-d '{"email":"jekyll@example.com","password":"password"}'
+
+# Profile (manual token)
+TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/protected/profile
+```
+
+**Bash Validation Script** (`test-jwt.sh`):
+```bash
+#!/bin/bash
+BASE_URL="http://localhost:8080"
+echo "=== JWT Auth Test ==="
+
+# Login
+RESP=$(curl -s -w "\n%{http_code}" -X POST "$BASE_URL/api/login" \
+-H "Content-Type: application/json" \
+-d '{"email":"jekyll@example.com","password":"password"}')
+CODE=$(echo "$RESP" | tail -1)
+BODY=$(echo "$RESP" | sed '$d')
+echo "$BODY (Status: $CODE)"
+
+[ "$CODE" = "200" ] || { echo "Login failed"; exit 1; }
+TOKEN=$(echo "$BODY" | jq -r '.token')
+echo "Token: $TOKEN"
+
+# Profile
+RESP=$(curl -s -w "\n%{http_code}" -H "Authorization: Bearer $TOKEN" "$BASE_URL/api/protected/profile")
+echo "$RESP"
+```
+
+Run: `chmod +x test-jwt.sh; make db-setup; cargo run serve &; sleep 5; ./test-jwt.sh`
+
+**Add New Endpoint:**
+1. Add in `src/http/controllers/api_controller.rs`: `#[get("/new")] pub async fn new_endpoint(req: HttpRequest) -> ... { ... }`
+2. In `src/routes.rs` `config()`: add `.service(new_endpoint)` under `/api` (public) or `/protected` (JWT).
+3. `cargo check && cargo clippy`
+4. Test: `curl ... /api/new` or with Bearer for protected.
+
 ---
 
 ## Nineties binary

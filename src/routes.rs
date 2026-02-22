@@ -1,5 +1,6 @@
+use crate::http::controllers::api_controller::{login, profile};
 use crate::http::controllers::{admin_controller, auth_controller, home_controller};
-use crate::http::middlewares::auth_middleware::AuthMiddleware;
+use crate::http::middlewares::{auth_middleware::AuthMiddleware, jwt_middleware::JwtMiddleware};
 use crate::websocket;
 use actix_files as fs;
 use actix_web::http::header::{CACHE_CONTROL, ETAG, IF_NONE_MATCH};
@@ -76,6 +77,14 @@ pub fn config(cfg: &mut web::ServiceConfig) {
         .service(auth_controller::signin_post)
         // GET /signout
         .service(auth_controller::signout)
+        // API routes (JWT alternative)
+        .service(
+            web::scope("/api").service(login).service(
+                web::scope("/protected")
+                    .wrap(JwtMiddleware)
+                    .service(profile),
+            ),
+        )
         // GET /admin
         .service(
             web::scope("/admin")

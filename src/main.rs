@@ -8,10 +8,12 @@ mod routes;
 mod http {
     pub mod middlewares {
         pub mod auth_middleware;
+        pub mod jwt_middleware;
     }
 
     pub mod controllers {
         pub mod admin_controller;
+        pub mod api_controller;
         pub mod auth_controller;
         pub mod home_controller;
     }
@@ -38,6 +40,7 @@ mod helpers {
     pub mod database;
     pub mod form;
     pub mod general;
+    pub mod jwt;
     pub mod session;
     pub mod template;
     pub mod test;
