@@ -268,6 +268,64 @@ cargon build --release
 - [ ] WebSockets for realtime interactions
 - [ ] Wrap diesel rollback command, and add that to our `main.rs` entrypoint available commands
 
+For detailed roadmap, see [docs/roadmap.md](docs/roadmap.md)
+
+---
+
+## Documentation
+
+Comprehensive documentation is available in the `/docs` directory and can be browsed interactively with Docsify:
+
+```bash
+npm run docs:serve
+```
+
+Then visit http://localhost:3000
+
+### Core Documentation
+
+- **[Overview](docs/01-overview.md)** - Project overview and quick start guide
+- **[Architecture](docs/02-architecture.md)** - System architecture and design patterns
+- **[Backend Development](docs/03-backend.md)** - Rust, Actix-web, and Diesel guides
+- **[Frontend Development](docs/04-frontend.md)** - Tera templates, Tailwind CSS, AlpineJS, HTMX
+- **[Database](docs/05-database.md)** - Migrations, seeders, and schema management
+- **[Testing](docs/06-testing.md)** - Testing strategies and running tests
+- **[API Reference](docs/07-api-reference.md)** - Complete API documentation
+- **[Problems & Improvements](docs/08-problems-and-improvements.md)** - Known issues and future improvements
+
+### Event Sourcing (Planned)
+
+- **[Event Sourcing Architecture](docs/09-event-sourcing-architecture.md)** - Detailed ES/CQRS design
+- **[Event Sourcing Implementation Guide](docs/10-event-sourcing-implementation-guide.md)** - Step-by-step implementation plan
+- **[Event Sourcing API Reference](docs/11-event-sourcing-api-reference.md)** - ES components and APIs
+
+### Implementation & Progress
+
+- **[Implementation Reports](docs/implementation/)** - Implementation summaries and progress reports
+- **[Progress Report](docs/implementation/progress-report.md)** - Overall project progress (2026-02-27)
+- **[Event Sourcing Core](docs/implementation/event-sourcing-core.md)** - Core ES library implementation
+
+### Quality Assurance
+
+- **[QA Reports](docs/qa/)** - Quality assurance and assessment reports
+- **[Phase 1 Assessment](docs/qa/phase-1-assessment.md)** - Multi-agent assessment of Phase 1
+
+### Planning & Analysis
+
+- **[Planning Documents](docs/planning/)** - Feature plans and design proposals
+- **[Technical Analysis](docs/analysis/)** - Performance analysis and benchmarks
+- **[Performance Analysis](docs/analysis/performance.md)** - Nineties vs Minimal TCP Server
+
+### Additional Resources
+
+- **[Diagrams](docs/diagrams/)** - Architecture and flow diagrams
+- **[Release Process](docs/RELEASE_PROCESS.md)** - How to create releases
+- **[Session Configuration](docs/SESSION_CONFIGURATION.md)** - Session and cookie configuration
+
+For AI agents working with documentation, see [docs/CLAUDE.md](docs/CLAUDE.md).
+
+---
+
 ## Contributing
 
 Feel free to contribute to this project. You can open issues, create pull requests, or just fork it and make your own version.
