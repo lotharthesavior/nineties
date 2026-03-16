@@ -1,7 +1,7 @@
 use actix::prelude::*;
 use std::collections::{HashMap, HashSet};
-use uuid::Uuid;
 use tracing::info;
+use uuid::Uuid;
 
 /// Message to connect a new client
 #[derive(Message)]
@@ -95,7 +95,7 @@ impl WsServer {
     /// Send a message to a specific connection
     fn send_message(&self, id: &Uuid, message: &str) {
         if let Some(conn) = self.connections.get(id) {
-            let _ = conn.addr.do_send(WsMessage(message.to_string()));
+            conn.addr.do_send(WsMessage(message.to_string()));
         }
     }
 
@@ -245,7 +245,7 @@ impl Handler<BroadcastAll> for WsServer {
     type Result = ();
 
     fn handle(&mut self, msg: BroadcastAll, _: &mut Context<Self>) {
-        for (id, _) in &self.connections {
+        for id in self.connections.keys() {
             // Skip sender if specified
             if let Some(skip_id) = msg.skip_id {
                 if *id == skip_id {

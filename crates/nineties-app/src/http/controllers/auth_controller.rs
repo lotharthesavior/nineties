@@ -1,5 +1,6 @@
 use crate::helpers::csrf::{get_csrf_token, validate_and_regenerate_csrf_token};
 use crate::helpers::database::get_connection;
+use crate::helpers::rate_limit::LoginRateLimiter;
 use crate::helpers::session::{
     clear_session_user, get_session_message, is_authenticated, set_session_user,
 };
@@ -9,7 +10,6 @@ use crate::schema::users::dsl::*;
 use crate::services::user_service::{validate_user_credentials, UserValidationResult};
 use crate::validation::user_validation::LoginForm as LoginValidation;
 use crate::AppState;
-use crate::helpers::rate_limit::LoginRateLimiter;
 use actix_session::Session;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
@@ -81,7 +81,7 @@ pub async fn signin_post(
     let key = format!("login:{}", ip);
 
     match limiter.check(key.clone()) {
-        Ok(()) => {}, // Rate limit not exceeded
+        Ok(()) => {} // Rate limit not exceeded
         Err(retry_after) => {
             warn!(
                 ip = ip,
@@ -129,7 +129,7 @@ pub async fn signin_post(
         email: form.email.clone(),
         password: form.password.clone(),
     };
-    if let Err(_) = login_validation.validate() {
+    if login_validation.validate().is_err() {
         session
             .insert(
                 "message",
@@ -218,14 +218,13 @@ mod tests {
     use crate::database::seeders::create_users::UserSeeder;
     use crate::database::seeders::traits::seeder::Seeder;
     use crate::helpers::database::get_connection;
-    use crate::helpers::test::TestFinalizer;
+    use crate::helpers::test::InMemoryTestGuard;
     use crate::http::controllers::auth_controller;
     use crate::http::middlewares::auth_middleware::AuthMiddleware;
     use crate::models::user::MIGRATIONS;
     use crate::schema::users::dsl::users;
     use crate::schema::users::id;
     use crate::AppState;
-    use crate::helpers::rate_limit::LoginRateLimiter;
     use actix_session::storage::CookieSessionStore;
     use actix_session::{Session, SessionMiddleware};
     use actix_web::cookie::{Cookie, Key};
@@ -239,25 +238,25 @@ mod tests {
 
     fn prepare_test_db() -> PooledConnection<ConnectionManager<SqliteConnection>> {
         dotenv::from_filename(".env.test").ok();
-        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
+        env::set_var("DATABASE_URL", "file::memory:?cache=shared");
+        let mut conn = get_connection();
         conn.run_pending_migrations(MIGRATIONS)
             .expect("Failed to run migrations");
 
         conn
     }
 
-    fn seed_users_table() {
-        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
-        UserSeeder::execute(&mut conn).expect("Failed to seed users table");
+    fn seed_users_table(conn: &mut SqliteConnection) {
+        UserSeeder::execute(conn).expect("Failed to seed users table");
     }
 
     #[serial]
     #[actix_web::test]
     async fn test_signin_route() {
-        let _finalizer = TestFinalizer;
+        let _guard = InMemoryTestGuard;
 
         let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
-        seed_users_table();
+        seed_users_table(&mut conn);
         let all_users: Vec<i32> = users.select(id).load::<i32>(&mut conn).unwrap();
         let user_id: i32 = all_users[0];
 
@@ -269,7 +268,7 @@ mod tests {
 
         // Create rate limiter for test
         let rate_limiter = crate::helpers::rate_limit::LoginRateLimiter(
-            crate::helpers::rate_limit::RateLimiter::new(100, std::time::Duration::from_secs(60))
+            crate::helpers::rate_limit::RateLimiter::new(100, std::time::Duration::from_secs(60)),
         );
 
         let app = test::init_service(
@@ -289,16 +288,16 @@ mod tests {
                 .service(
                     web::resource("/check-data")
                         .route(web::get().to({
-                            let user_id: i32 = user_id.clone();
+                            let user_id: i32 = user_id;
                             move |_req: HttpRequest, session: Session| async move {
                                 let session_user_id: i32 = session
                                     .get::<i32>("user_id")
                                     .unwrap_or(Some(0))
                                     .unwrap_or(0);
                                 if user_id == session_user_id {
-                                    HttpResponse::Ok()
+                                    HttpResponse::Ok().finish()
                                 } else {
-                                    HttpResponse::BadRequest()
+                                    HttpResponse::BadRequest().finish()
                                 }
                             }
                         }))
@@ -332,7 +331,7 @@ mod tests {
         let req2 = test::TestRequest::post()
             .uri("/signin")
             .cookie(session_cookie.clone())
-            .set_form(&[
+            .set_form([
                 ("csrf_token", csrf_token),
                 ("email", "jekyll@example.com"),
                 ("password", "password"),

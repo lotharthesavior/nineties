@@ -14,7 +14,7 @@ impl Seeder for UserSeeder {
         let expected_email: &str = "jekyll@example.com";
 
         let all_users: Vec<i32> = users.select(id).load::<i32>(conn).unwrap();
-        if all_users.len() > 0 {
+        if !all_users.is_empty() {
             info!(email = expected_email, "User table already seeded");
             return Ok(());
         }
@@ -24,7 +24,7 @@ impl Seeder for UserSeeder {
             .values(NewUser {
                 name: "Jekyll",
                 email: expected_email,
-                password: &*prepare_password("password"),
+                password: &prepare_password("password"),
             })
             .execute(conn);
 

@@ -34,7 +34,7 @@ mod tests {
     use crate::database::seeders::create_users::UserSeeder;
     use crate::database::seeders::traits::seeder::Seeder;
     use crate::helpers::database::get_connection;
-    use crate::helpers::test::TestFinalizer;
+    use crate::helpers::test::InMemoryTestGuard;
     use crate::models::user::{NewUser, User, MIGRATIONS};
     use crate::schema::users::dsl::*;
 
@@ -43,24 +43,25 @@ mod tests {
     use diesel::{Connection, ExpressionMethods, QueryDsl, RunQueryDsl, SqliteConnection};
     use diesel_migrations::MigrationHarness;
     use serial_test::serial;
+    use std::env;
 
     fn prepare_test_db() -> PooledConnection<ConnectionManager<SqliteConnection>> {
         dotenv::from_filename(".env.test").ok();
-        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = get_connection();
+        env::set_var("DATABASE_URL", "file::memory:?cache=shared");
+        let mut conn = get_connection();
         conn.run_pending_migrations(MIGRATIONS)
             .expect("Failed to run migrations");
         conn
     }
 
-    fn seed_users_table() {
-        let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
-        UserSeeder::execute(&mut conn).expect("Failed to seed users table");
+    fn seed_users_table(conn: &mut SqliteConnection) {
+        UserSeeder::execute(conn).expect("Failed to seed users table");
     }
 
     #[serial]
     #[actix_web::test]
     async fn test_can_create_user() {
-        let _finalizer = TestFinalizer;
+        let _guard = InMemoryTestGuard;
 
         let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
 
@@ -81,7 +82,7 @@ mod tests {
                 .load::<User>(conn)
                 .unwrap();
 
-            assert!(results.len() > 0);
+            assert!(!results.is_empty());
 
             Ok(())
         });
@@ -90,12 +91,12 @@ mod tests {
     #[serial]
     #[actix_web::test]
     async fn test_can_delete_user() {
-        let _finalizer = TestFinalizer;
+        let _guard = InMemoryTestGuard;
 
         let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
 
         conn.test_transaction::<_, Error, _>(|conn| {
-            seed_users_table();
+            seed_users_table(conn);
 
             let expected_email: &str = "jekyll@example.com";
 
@@ -103,7 +104,7 @@ mod tests {
                 .filter(email.eq(expected_email))
                 .get_results(conn)
                 .unwrap();
-            assert!(results.len() > 0);
+            assert!(!results.is_empty());
 
             let _ = diesel::delete(users.filter(email.eq(expected_email)))
                 .execute(conn)
@@ -113,7 +114,7 @@ mod tests {
                 .filter(email.eq(expected_email))
                 .get_results(conn)
                 .unwrap();
-            assert!(results2.len() == 0);
+            assert!(results2.is_empty());
 
             Ok(())
         });
@@ -122,13 +123,13 @@ mod tests {
     #[serial]
     #[actix_web::test]
     async fn test_can_retrieve_user_by_id() {
-        let _finalizer = TestFinalizer;
+        let _guard = InMemoryTestGuard;
 
         let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
 
         conn.test_transaction::<_, Error, _>(
             |conn: &mut PooledConnection<ConnectionManager<SqliteConnection>>| {
-                seed_users_table();
+                seed_users_table(conn);
 
                 let all_users: Vec<i32> = users.select(id).load::<i32>(conn).unwrap();
                 let user_id: i32 = all_users[0];
@@ -147,13 +148,13 @@ mod tests {
     #[serial]
     #[actix_web::test]
     async fn test_can_update_user() {
-        let _finalizer = TestFinalizer;
+        let _guard = InMemoryTestGuard;
 
         let mut conn: PooledConnection<ConnectionManager<SqliteConnection>> = prepare_test_db();
 
         conn.test_transaction::<_, Error, _>(
             |conn: &mut PooledConnection<ConnectionManager<SqliteConnection>>| {
-                seed_users_table();
+                seed_users_table(conn);
 
                 let all_users: Vec<i32> = users.select(id).load::<i32>(conn).unwrap();
                 let user_id: i32 = all_users[0];

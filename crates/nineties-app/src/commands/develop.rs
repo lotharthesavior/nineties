@@ -5,7 +5,7 @@ use tokio::io::{AsyncBufReadExt, BufReader, Lines};
 use tokio::process::{ChildStderr, ChildStdout, Command};
 use tokio::task::JoinHandle;
 use tokio::try_join;
-use tracing::{info, error, debug};
+use tracing::{debug, error, info};
 
 /// Starts the development environment with `cargo-watch` for Rust hot-reloading
 /// and Vite for frontend asset bundling, running both concurrently.
@@ -22,10 +22,7 @@ pub async fn run_development() -> io::Result<()> {
         }
         Err(e) => {
             error!("Development environment error: {:?}", e);
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Failed to run development tasks",
-            ))
+            Err(io::Error::other("Failed to run development tasks"))
         }
     }
 }
@@ -78,10 +75,10 @@ async fn run_cargo_watch() -> io::Result<()> {
     stderr_task.await.expect("Failed to handle stderr");
 
     if !status.success() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("Cargo Watch process exited with status: {:?}", status),
-        ));
+        return Err(io::Error::other(format!(
+            "Cargo Watch process exited with status: {:?}",
+            status
+        )));
     }
 
     Ok(())
@@ -102,10 +99,10 @@ async fn run_vite_bundle() -> io::Result<()> {
             .expect("Npm Install wasn't running");
 
         if !status.success() {
-            return Err(io::Error::new(
-                io::ErrorKind::Other,
-                format!("Npm Install process exited with status: {:?}", status),
-            ));
+            return Err(io::Error::other(format!(
+                "Npm Install process exited with status: {:?}",
+                status
+            )));
         }
     }
 
@@ -150,10 +147,10 @@ async fn run_vite_bundle() -> io::Result<()> {
     stderr_task.await.expect("Failed to handle stderr");
 
     if !status.success() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("Vite process exited with status: {:?}", status),
-        ));
+        return Err(io::Error::other(format!(
+            "Vite process exited with status: {:?}",
+            status
+        )));
     }
 
     Ok(())

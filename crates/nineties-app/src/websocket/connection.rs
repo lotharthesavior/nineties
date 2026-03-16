@@ -3,8 +3,8 @@ use actix_session::Session;
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
 use std::time::{Duration, Instant};
-use uuid::Uuid;
 use tracing::{info, warn};
+use uuid::Uuid;
 
 use crate::websocket::server::{Connect, Disconnect, Subscribe, Unsubscribe, WsMessage, WsServer};
 
