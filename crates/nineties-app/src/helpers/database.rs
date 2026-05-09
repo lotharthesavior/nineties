@@ -1,7 +1,11 @@
 use crate::helpers::config;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::SqliteConnection;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations};
 use std::sync::{OnceLock, RwLock};
+
+/// Embedded database migrations, compiled into the binary.
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 /// Internal state for the connection pool singleton.
 struct PoolState {

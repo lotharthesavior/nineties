@@ -62,7 +62,7 @@ async fn run_cargo_watch() -> io::Result<()> {
     let stderr_task = tokio::spawn(async move {
         let mut reader: Lines<BufReader<ChildStderr>> = BufReader::new(stderr).lines();
         while let Ok(Some(line)) = reader.next_line().await {
-            error!("[cargo-watch] {}", line);
+            info!("[cargo-watch] {}", line);
         }
     });
 
@@ -134,7 +134,7 @@ async fn run_vite_bundle() -> io::Result<()> {
     let stderr_task: JoinHandle<()> = tokio::spawn(async move {
         let mut reader: Lines<BufReader<ChildStderr>> = BufReader::new(stderr).lines();
         while let Ok(Some(line)) = reader.next_line().await {
-            error!("[vite] {}", line);
+            info!("[vite] {}", line);
         }
     });
 

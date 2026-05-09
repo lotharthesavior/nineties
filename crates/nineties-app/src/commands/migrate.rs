@@ -1,7 +1,7 @@
-use crate::database::seeders::create_users::UserSeeder;
-use crate::database::seeders::traits::seeder::Seeder;
-use crate::helpers::database::get_connection;
-use crate::models::user::MIGRATIONS;
+use crate::database::seeders::create_users::seed_default_user;
+use crate::helpers::config;
+use crate::helpers::database::{get_connection, MIGRATIONS};
+use crate::helpers::es_stack;
 
 use diesel::r2d2::{ConnectionManager, PooledConnection};
 use diesel::SqliteConnection;
@@ -13,7 +13,7 @@ use tracing::info;
 
 /// Runs pending database migrations. Supports `--fresh` to drop and recreate
 /// the database, and `--seed` to populate with default data after migration.
-pub fn run(args: &[String]) -> io::Result<()> {
+pub async fn run(args: &[String]) -> io::Result<()> {
     info!("Starting migration procedure");
 
     if args.contains(&"--fresh".to_string()) {
@@ -32,7 +32,12 @@ pub fn run(args: &[String]) -> io::Result<()> {
 
     if args.contains(&"--seed".to_string()) {
         info!("Running seeders");
-        UserSeeder::execute(&mut get_connection()).expect("Failed to seed users table");
+        let stack = es_stack::build(&config::database_url())
+            .await
+            .expect("Failed to build ES stack");
+        seed_default_user(&stack.command_bus, stack.read_model_store.as_ref())
+            .await
+            .expect("Failed to seed default user");
         info!("Seeders completed successfully");
     }
 

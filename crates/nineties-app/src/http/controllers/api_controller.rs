@@ -273,11 +273,11 @@ mod tests {
     use super::*;
     use crate::domain::user::projector::UserProjector;
     use crate::helpers::database::get_connection;
+    use crate::helpers::database::MIGRATIONS;
     use crate::helpers::jwt::create_token;
     use crate::helpers::rate_limit::{LoginRateLimiter, RateLimiter};
     use crate::helpers::test::InMemoryTestGuard;
     use crate::http::middlewares::jwt_middleware::JwtMiddleware;
-    use crate::models::user::MIGRATIONS;
     use actix_web::{http, test, App};
     use diesel_migrations::MigrationHarness;
     use nineties_core::access_log::{AccessLogger, NoOpAccessLogger};

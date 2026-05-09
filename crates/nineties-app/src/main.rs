@@ -10,6 +10,7 @@ mod routes;
 mod http {
     pub mod middlewares {
         pub mod auth_middleware;
+        pub mod idle_timeout_middleware;
         pub mod jwt_middleware;
         pub mod rate_limit_middleware;
     }
@@ -18,30 +19,28 @@ mod http {
         pub mod admin_controller;
         pub mod api_controller;
         pub mod auth_controller;
+        pub mod diag_controller;
         pub mod home_controller;
     }
+
+    pub mod errors;
 }
 
 mod database {
     pub mod seeders {
         pub mod create_users;
-
-        pub mod traits {
-            pub mod seeder;
-        }
     }
-}
-
-mod models {
-    pub mod user;
 }
 
 mod schema;
 
 mod helpers {
+    pub mod access_log;
+    pub mod audit_context;
     pub mod config;
     pub mod csrf;
     pub mod database;
+    pub mod es_stack;
     pub mod general;
     pub mod jwt;
     pub mod rate_limit;
@@ -57,12 +56,12 @@ mod services {
 mod validation;
 
 mod commands;
+mod domain;
 pub mod websocket;
 /// Shared application state accessible by all request handlers via `web::Data`.
 #[derive(Debug)]
 pub struct AppState {
     app_name: Mutex<String>,
-    _user_id: Mutex<Option<i32>>,
 }
 
 /// Checks that the application environment is healthy (e.g., `.env` file exists).
@@ -147,8 +146,8 @@ async fn main() -> std::io::Result<()> {
             check_database_health();
             commands::develop::run_development().await
         }
-        "migrate" => commands::migrate::run(&args),
-        "seed" => commands::seed::run(),
+        "migrate" => commands::migrate::run(&args).await,
+        "seed" => commands::seed::run().await,
         _ => {
             error!("Unknown command: {}", command);
             Ok(())
